@@ -17,15 +17,13 @@
 ## Nginx
 
 ```nginx
-geo $http_x_ip $region {
+geo $region {
     ranges;
-    default 0;
     include geo/region.txt;
 }
 
-geo $http_x_ip $city {
+geo $city {
     ranges;
-    default 0;
     include geo/city.txt;
 }
 ```
