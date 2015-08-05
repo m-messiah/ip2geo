@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 from requests import get as rget
 from zipfile import ZipFile
