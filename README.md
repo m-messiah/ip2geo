@@ -1,6 +1,6 @@
-# Geo IP importer
+# IpGeoBase importer
 
-Импортер geoIP базы русских городов в файлы, понятные для nginx geoip module, с поддержкой кодов регионов РФ.
+Импортер ipgeobase базы русских городов в файлы, понятные для nginx geoip module, с поддержкой кодов регионов РФ.
 
 ## Принцип
 
