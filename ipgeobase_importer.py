@@ -27,7 +27,7 @@ database = {}
 
 REGIONS = dict(l.decode("utf8").rstrip().split("\t")[::-1]
                for l in open(
-                   os_path.dirname(os_path.realpath(__file__)) + 
+                   os_path.dirname(os_path.realpath(__file__)) +
                    "/regions.tsv").readlines())
 CITIES = {}
 for line in extracteddata.open("cities.txt").readlines():

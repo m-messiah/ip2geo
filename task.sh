@@ -1,11 +1,9 @@
-#!/usr/local/bin/bash -e
+#!/bin/sh -e
 
-pushd /usr/local/etc/nginx
+cd /usr/local/etc/nginx
 rm -rf geo.bak
-mv geo geo.bak
-mkdir geo
+cp -r geo geo.bak
 
 ipgeobase_importer
-nginx -t || (echo "Fail" && rm -rf geo && mv geo.bak geo && exit 1)
+nginx -t || (echo "Fail" && cp -r geo.bak/* geo/ && exit 1)
 
-popd
