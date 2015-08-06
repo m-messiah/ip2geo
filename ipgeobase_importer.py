@@ -4,6 +4,7 @@ from requests import get as rget
 from zipfile import ZipFile
 from StringIO import StringIO
 from base64 import b64encode
+from os import path as os_path
 
 
 def error(text):
@@ -25,7 +26,9 @@ if "cidr_optim.txt" not in filelist:
 database = {}
 
 REGIONS = dict(l.decode("utf8").rstrip().split("\t")[::-1]
-               for l in open("regions.tsv").readlines())
+               for l in open(
+                   os_path.dirname(os_path.realpath(__file__)) + 
+                   "/regions.tsv").readlines())
 CITIES = {}
 for line in extracteddata.open("cities.txt").readlines():
     # Format is:
