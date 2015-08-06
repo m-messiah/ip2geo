@@ -46,7 +46,7 @@ for line in extracteddata.open("cidr_optim.txt").readlines():
 
 
 # Create nginx geoip compatible files
-with open("region.txt", "w") as reg, open("city.txt", "w") as city:
+with open("geo/region.txt", "w") as reg, open("geo/city.txt", "w") as city:
     for ip_range in sorted(database):
         info = database[ip_range]
         city.write("%s %s;\n" % (ip_range, info['city']))
