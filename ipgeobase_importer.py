@@ -57,11 +57,21 @@ with open("geo/region.txt", "w") as reg, open("geo/city.txt", "w") as city:
 
 # Tor
 torlist = rget("https://torstatus.blutmagie.de/ip_list_exit.php/Tor_ip_list_EXIT.csv")
-if torlist.status_code != 200:
-    error("Torlist no answer")
+if torlist.status_code == 200:
+    torlist = set(filter(len, torlist.content.split("\n")))
+else:
+    torlist = set()
 
-torlist = set(filter(len, torlist.content.split("\n")))
+torproject = rget("https://check.torproject.org/exit-addresses")
+if torproject.status_code == 200:
+    torproject = set(
+                    map(lambda s: s.split()[1],
+                        filter(lambda l: "ExitAddress" in l,
+                               torproject.content.split("\n"))))
+else:
+    torproject = set()
+
 with open("geo/tor.txt", "w") as tor:
-    for ip in sorted(torlist, key=lambda i: tuple(int(p) for p in i.split("."))):
+    for ip in sorted(torlist|torproject, key=lambda i: tuple(int(p) for p in i.split("."))):
         tor.write("%s-%s 1;\n" % (ip, ip))
 
