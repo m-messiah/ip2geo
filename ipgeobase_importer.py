@@ -60,8 +60,8 @@ torlist = rget("https://torstatus.blutmagie.de/ip_list_exit.php/Tor_ip_list_EXIT
 if torlist.status_code != 200:
     error("Torlist no answer")
 
-torlist = filter(len, torlist.content.split("\n"))
+torlist = set(filter(len, torlist.content.split("\n")))
 with open("geo/tor.txt", "w") as tor:
-    for ip in torlist:
+    for ip in sorted(torlist, key=lambda i: tuple(int(p) for p in i.split("."))):
         tor.write("%s-%s 1;\n" % (ip, ip))
 
