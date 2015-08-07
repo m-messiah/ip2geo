@@ -26,4 +26,10 @@ geo $city {
     ranges;
     include geo/city.txt;
 }
+
+geo $is_tor {
+    ranges;
+    default 0;
+    include geo/tor.txt;
+}
 ```
