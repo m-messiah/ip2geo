@@ -54,3 +54,14 @@ with open("geo/region.txt", "w") as reg, open("geo/city.txt", "w") as city:
         info = database[ip_range]
         city.write("%s %s;\n" % (ip_range, info['city']))
         reg.write("%s %s;\n" % (ip_range, info['reg_id']))
+
+# Tor
+torlist = rget("https://torstatus.blutmagie.de/ip_list_exit.php/Tor_ip_list_EXIT.csv")
+if torlist.status_code != 200:
+    error("Torlist no answer")
+
+torlist = filter(len, torlist.content.split("\n"))
+with open("geo/tor.txt", "w") as tor:
+    for ip in torlist:
+        tor.write("%s-%s 1;\n" % (ip, ip))
+
