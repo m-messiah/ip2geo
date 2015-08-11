@@ -1,6 +1,6 @@
 #!/bin/sh -e
 
-cd /usr/local/etc/nginx
+cd /usr/local/etc
 rm -rf geo.bak
 cp -r geo geo.bak
 
