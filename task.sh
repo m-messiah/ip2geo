@@ -4,6 +4,6 @@ cd /usr/local/etc
 rm -rf geo.bak
 cp -r geo geo.bak
 
-ipgeobase_importer
-nginx -t || (echo "Fail" && cp -r geo.bak/* geo/ && exit 1)
+/usr/local/bin/ipgeobase_importer
+/usr/local/sbin/nginx -t || (echo "Fail" && cp -r geo.bak/* geo/ && exit 1)
 
