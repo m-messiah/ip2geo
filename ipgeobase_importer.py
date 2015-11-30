@@ -8,6 +8,7 @@ from os import path as os_path
 
 
 def error(text):
+    import sys
     sys.stderr.write(text + "\n")
     exit(1)
 
@@ -25,15 +26,21 @@ if "cidr_optim.txt" not in filelist:
 
 database = {}
 
-REGIONS = dict(l.decode("utf8").rstrip().split("\t")[::-1]
-               for l in open(
-                   os_path.dirname(os_path.realpath(__file__)) +
-                   "/regions.tsv").readlines())
+REGIONS = dict(
+    l.decode("utf8").rstrip().split("\t")[::-1]
+    for l in open(
+        os_path.join(
+            os_path.dirname(os_path.realpath(__file__)),
+            "regions.tsv"
+        )
+    ).readlines()
+)
+
 CITIES = {}
 for line in extracteddata.open("cities.txt").readlines():
     # Format is:
     # <city_id>\t<city_name>\t<region>\t<district>\t<lattitude>\t<longitude>
-    cid, city, region_name, _, _, _ = line.decode("cp1251").split("\t")
+    cid, city, region_name = line.decode("cp1251").split("\t")[:3]
     if region_name in REGIONS:
         CITIES[cid] = {'city': b64encode(city.encode("utf8")),
                        'reg_id': REGIONS[region_name]}
@@ -42,10 +49,10 @@ for line in extracteddata.open("cities.txt").readlines():
 
 for line in extracteddata.open("cidr_optim.txt").readlines():
     # Format is: <int_start>\t<int_end>\t<ip_range>\t<country_code>\tcity_id
-    _, _, ip_range, country, cid = line.decode("cp1251").rstrip().split("\t")
+    ip_range, country, cid = line.decode("cp1251").rstrip().split("\t")[2:]
     # Skip not russian cities
     if country == "RU" and cid in CITIES:
-            database["".join(ip_range.split())] = CITIES[cid]
+        database["".join(ip_range.split())] = CITIES[cid]
 
 
 # Create nginx geoip compatible files
@@ -56,7 +63,8 @@ with open("geo/region.txt", "w") as reg, open("geo/city.txt", "w") as city:
         reg.write("%s %s;\n" % (ip_range, info['reg_id']))
 
 # Tor
-torlist = rget("https://torstatus.blutmagie.de/ip_list_exit.php/Tor_ip_list_EXIT.csv")
+torlist = rget("https://torstatus.blutmagie.de/ip_list_exit.php"
+               "/Tor_ip_list_EXIT.csv")
 if torlist.status_code == 200:
     torlist = set(filter(len, torlist.content.split("\n")))
 else:
@@ -64,14 +72,13 @@ else:
 
 torproject = rget("https://check.torproject.org/exit-addresses")
 if torproject.status_code == 200:
-    torproject = set(
-                    map(lambda s: s.split()[1],
-                        filter(lambda l: "ExitAddress" in l,
-                               torproject.content.split("\n"))))
+    torproject = set(map(lambda s: s.split()[1],
+                         filter(lambda l: "ExitAddress" in l,
+                                torproject.content.split("\n"))))
 else:
     torproject = set()
 
 with open("geo/tor.txt", "w") as tor:
-    for ip in sorted(torlist|torproject, key=lambda i: tuple(int(p) for p in i.split("."))):
+    for ip in sorted(torlist | torproject,
+                     key=lambda i: tuple(int(p) for p in i.split("."))):
         tor.write("%s-%s 1;\n" % (ip, ip))
-
