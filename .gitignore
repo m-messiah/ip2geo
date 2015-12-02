@@ -1,3 +1,5 @@
 .py[co]
-geo/
 .idea
+MANIFEST
+dist
+build

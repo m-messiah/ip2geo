@@ -1,0 +1,180 @@
+#!/usr/bin/env python
+# coding=utf-8
+
+from requests import get as rget
+from zipfile import ZipFile
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import BytesIO as StringIO
+from base64 import b64encode
+from os import path as os_path, makedirs
+from sys import argv, stderr
+
+
+def error(text):
+    stderr.write(text + "\n")
+    exit(1)
+
+
+if len(argv) < 2:
+    error("Usage: %s output_dir" % argv[0])
+
+output = argv[1]
+try:
+    makedirs(output)
+except OSError as exc:
+    from errno import EEXIST
+    if exc.errno == EEXIST and os_path.isdir(output):
+        pass
+    else:
+        error("Can't create directory %s" % output)
+
+archive = rget("http://ipgeobase.ru/files/db/Main/geo_files.zip")
+if archive.status_code != 200:
+    error("IPGeobase no answer: %s" % archive.status_code)
+
+extracteddata = ZipFile(StringIO(archive.content))
+
+filelist = extracteddata.namelist()
+if "cities.txt" not in filelist:
+    error("cities.txt not downloaded")
+if "cidr_optim.txt" not in filelist:
+    error("cidr_optim.txt not downloaded")
+
+database = {}
+
+REGIONS = {
+    u"Республика Адыгея": 1,
+    u"Республика Башкортостан": 2,
+    u"Республика Бурятия": 3,
+    u"Республика Алтай": 4,
+    u"Республика Дагестан": 5,
+    u"Ингушетия": 6,
+    u"Кабардино-Балкарская Республика": 7,
+    u"Республика Калмыкия": 8,
+    u"Карачаево-Черкесская Республика": 9,
+    u"Республика Карелия": 10,
+    u"Республика Коми": 11,
+    u"Республика Марий Эл": 12,
+    u"Республика Мордовия": 13,
+    u"Республика Саха (Якутия)": 14,
+    u"Северная Осетия - Алания": 15,
+    u"Татарстан": 16,
+    u"Республика Тыва": 17,
+    u"Удмуртская Республика": 18,
+    u"Республика Хакасия": 19,
+    u"Чеченская Республика": 20,
+    u"Чувашская Республика - Чувашия": 21,
+    u"Алтайский край": 22,
+    u"Краснодарский край": 23,
+    u"Красноярский край": 24,
+    u"Приморский край": 25,
+    u"Ставропольский край": 26,
+    u"Хабаровский край": 27,
+    u"Амурская область": 28,
+    u"Архангельская область": 29,
+    u"Астраханская область": 30,
+    u"Белгородская область": 31,
+    u"Брянская область": 32,
+    u"Владимирская область": 33,
+    u"Волгоградская область": 34,
+    u"Вологодская область": 35,
+    u"Воронежская область": 36,
+    u"Ивановская область": 37,
+    u"Иркутская область": 38,
+    u"Калининградская область": 39,
+    u"Калужская область": 40,
+    u"Камчатский край": 41,
+    u"Кемеровская область": 42,
+    u"Кировская область": 43,
+    u"Костромская область": 44,
+    u"Курганская область": 45,
+    u"Курская область": 46,
+    u"Ленинградская область": 47,
+    u"Липецкая область": 48,
+    u"Магаданская область": 49,
+    u"Московская область": 50,
+    u"Мурманская область": 51,
+    u"Нижегородская область": 52,
+    u"Новгородская область": 53,
+    u"Новосибирская область": 54,
+    u"Омская область": 55,
+    u"Оренбургская область": 56,
+    u"Орловская область": 57,
+    u"Пензенская область": 58,
+    u"Пермский край": 59,
+    u"Псковская область": 60,
+    u"Ростовская область": 61,
+    u"Рязанская область": 62,
+    u"Самарская область": 63,
+    u"Саратовская область": 64,
+    u"Сахалинская область": 65,
+    u"Свердловская область": 66,
+    u"Смоленская область": 67,
+    u"Тамбовская область": 68,
+    u"Тверская область": 69,
+    u"Томская область": 70,
+    u"Тульская область": 71,
+    u"Тюменская область": 72,
+    u"Ульяновская область": 73,
+    u"Челябинская область": 74,
+    u"Забайкальский край": 75,
+    u"Ярославская область": 76,
+    u"Москва": 77,
+    u"Санкт-Петербург": 78,
+    u"Еврейская автономная область": 79,
+    u"Ненецкий автономный округ": 83,
+    u"Ханты-Мансийский автономный округ - Югра": 86,
+    u"Чукотский автономный округ": 87,
+    u"Ямало-Ненецкий автономный округ": 89,
+}
+
+CITIES = {}
+for line in extracteddata.open("cities.txt").readlines():
+    # Format is:
+    # <city_id>\t<city_name>\t<region>\t<district>\t<lattitude>\t<longitude>
+    cid, city, region_name = line.decode("cp1251").split("\t")[:3]
+    if region_name in REGIONS:
+        CITIES[cid] = {'city': b64encode(city.encode("utf8")).decode("utf8"),
+                       'reg_id': REGIONS[region_name]}
+        if cid == "1199":  # Zelenograd fix
+            CITIES[cid]['reg_id'] = 77
+
+for line in extracteddata.open("cidr_optim.txt").readlines():
+    # Format is: <int_start>\t<int_end>\t<ip_range>\t<country_code>\tcity_id
+    ip_range, country, cid = line.decode("cp1251").rstrip().split("\t")[2:]
+    # Skip not russian cities
+    if country == "RU" and cid in CITIES:
+        database["".join(ip_range.split())] = CITIES[cid]
+
+
+# Create nginx geoip compatible files
+with open(os_path.join(output, "region.txt"), "w") as reg:
+    with open(os_path.join(output, "city.txt"), "w") as city:
+        for ip_range in sorted(database):
+            info = database[ip_range]
+            city.write("%s %s;\n" % (ip_range, info['city']))
+            reg.write("%s %s;\n" % (ip_range, info['reg_id']))
+
+# Tor
+torlist = rget("https://torstatus.blutmagie.de/ip_list_exit.php"
+               "/Tor_ip_list_EXIT.csv")
+if torlist.status_code == 200:
+    torlist = set(filter(len, torlist.content.decode("utf8").split("\n")))
+else:
+    torlist = set()
+
+torproject = rget("https://check.torproject.org/exit-addresses")
+if torproject.status_code == 200:
+    torproject = set(
+        map(lambda s: s.split()[1],
+            filter(lambda l: "ExitAddress" in l,
+                   torproject.content.decode("utf8").split("\n"))))
+else:
+    torproject = set()
+
+with open(os_path.join(output, "tor.txt"), "w") as tor:
+    for ip in sorted(torlist | torproject,
+                     key=lambda i: tuple(int(p) for p in i.split("."))):
+        tor.write("%s-%s 1;\n" % (ip, ip))
