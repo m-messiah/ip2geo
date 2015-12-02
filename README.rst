@@ -24,10 +24,14 @@ IpGeoBase importer
 Установка
 ---------
 
+.. code:: bash
+
     pip install ipgeobase-importer
     
 Запуск
 ------
+
+.. code:: bash
 
     ipgeobase-importer <output_dir>
     
