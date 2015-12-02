@@ -1,6 +1,14 @@
 IpGeoBase importer
 ==================
 
+.. image:: https://img.shields.io/pypi/v/ipgeobase-importer.svg?style=flat-square
+    :target: https://pypi.python.org/pypi/ipgeobase-importer
+
+
+
+.. image:: https://img.shields.io/pypi/dm/ipgeobase-importer.svg?style=flat-square
+        :target: https://pypi.python.org/pypi/ipgeobase-importer
+
 Импортер ipgeobase базы русских городов в файлы, понятные для nginx geoip module, с поддержкой кодов регионов РФ.
 
 Принцип
