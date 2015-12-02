@@ -1,9 +1,8 @@
 #!/bin/sh -e
 
-cd /usr/local/etc
-rm -rf geo.bak
-cp -r geo geo.bak
+rm -rf /usr/local/etc/geo.bak
+cp -r /usr/local/etc/geo /usr/local/etc/geo.bak || echo "geo not exists"
 
-/usr/local/bin/python /root/ipgeobase-importer/ipgeobase-importer.py
-/usr/local/sbin/nginx -t || (echo "Fail" && cp -r geo.bak/* geo/ && exit 1)
+/usr/local/bin/ipgeobase-importer /usr/local/etc/geo/
+/usr/local/sbin/nginx -t || (echo "Fail" >&2 && cp -r /usr/local/etc/geo.bak/* /usr/local/etc/geo/ && exit 1)
 
