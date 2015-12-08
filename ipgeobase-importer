@@ -50,22 +50,22 @@ REGIONS = {
     u"Республика Бурятия": 3,
     u"Республика Алтай": 4,
     u"Республика Дагестан": 5,
-    u"Ингушетия": 6,
-    u"Кабардино-Балкарская Республика": 7,
+    u"Республика Ингушетия": 6,
+    u"Республика Кабардино-Балкария": 7,
     u"Республика Калмыкия": 8,
-    u"Карачаево-Черкесская Республика": 9,
+    u"Республика Карачаево-Черкессия": 9,
     u"Республика Карелия": 10,
     u"Республика Коми": 11,
     u"Республика Марий Эл": 12,
     u"Республика Мордовия": 13,
     u"Республика Саха (Якутия)": 14,
-    u"Северная Осетия - Алания": 15,
-    u"Татарстан": 16,
-    u"Республика Тыва": 17,
-    u"Удмуртская Республика": 18,
+    u"Республика Северная Осетия (Алания)": 15,
+    u"Республика Татарстан": 16,
+    u"Республика Тыва (Тува)": 17,
+    u"Республика Удмуртия": 18,
     u"Республика Хакасия": 19,
-    u"Чеченская Республика": 20,
-    u"Чувашская Республика - Чувашия": 21,
+    u"Республика Чечня": 20,
+    u"Республика Чувашия": 21,
     u"Алтайский край": 22,
     u"Краснодарский край": 23,
     u"Красноярский край": 24,
@@ -125,7 +125,7 @@ REGIONS = {
     u"Санкт-Петербург": 78,
     u"Еврейская автономная область": 79,
     u"Ненецкий автономный округ": 83,
-    u"Ханты-Мансийский автономный округ - Югра": 86,
+    u"Ханты-Мансийский автономный округ": 86,
     u"Чукотский автономный округ": 87,
     u"Ямало-Ненецкий автономный округ": 89,
 }
@@ -135,11 +135,10 @@ for line in extracteddata.open("cities.txt").readlines():
     # Format is:
     # <city_id>\t<city_name>\t<region>\t<district>\t<lattitude>\t<longitude>
     cid, city, region_name = line.decode("cp1251").split("\t")[:3]
-    if region_name in REGIONS:
-        CITIES[cid] = {'city': b64encode(city.encode("utf8")).decode("utf8"),
-                       'reg_id': REGIONS[region_name]}
-        if cid == "1199":  # Zelenograd fix
-            CITIES[cid]['reg_id'] = 77
+    CITIES[cid] = {'city': b64encode(city.encode("utf8")).decode("utf8"),
+                   'reg_id': REGIONS.get(region_name)}
+    if cid == "1199":  # Zelenograd fix
+        CITIES[cid]['reg_id'] = 77
 
 for line in extracteddata.open("cidr_optim.txt").readlines():
     # Format is: <int_start>\t<int_end>\t<ip_range>\t<country_code>\tcity_id
@@ -155,7 +154,8 @@ with open(os_path.join(output, "region.txt"), "w") as reg:
         for ip_range in sorted(database):
             info = database[ip_range]
             city.write("%s %s;\n" % (ip_range, info['city']))
-            reg.write("%s %s;\n" % (ip_range, info['reg_id']))
+            if info['reg_id']:
+                reg.write("%s %s;\n" % (ip_range, info['reg_id']))
 
 # Tor
 torlist = rget("https://torstatus.blutmagie.de/ip_list_exit.php"
