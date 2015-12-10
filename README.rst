@@ -16,8 +16,8 @@ IpGeoBase importer
 
 1.  Скачивает geo_files.zip с сайта ipgeobase.ru
 2.  Конвертирует базу в два файла:
-    +   city.txt, вида: \<start\_ip\>-\<end\_ip\> base64(\<city_name\>);
-    +   region.txt, вида: \<start\_ip\>-\<end\_ip\> \<region\_code\>;
+    *   city.txt, вида: \<start\_ip\>-\<end\_ip\> base64(\<city_name\>);
+    *   region.txt, вида: \<start\_ip\>-\<end\_ip\> \<region\_code\>;
 3.  Скачивает списки TOR с torproject и blutmagie.de
 4.  Создает tor.txt, вида: \<start\_ip\>-\<end\_ip\> 1;
 
