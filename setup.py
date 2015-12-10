@@ -5,12 +5,12 @@ from os.path import join, dirname
 
 setup(
     name='ipgeobase-importer',
-    version='1.1',
+    version='1.2',
     packages=[''],
     url='https://github.com/m-messiah/ipgeobase-importer',
     license='MIT',
     author='m_messiah',
-    author_email='m.muzafaov@gmail.com',
+    author_email='m.muzafarov@gmail.com',
     description=u'Импорт ipgeobase и TOR баз '
                 u'в совместимые с nginx geoIP map-файлы',
     long_description=open(join(dirname(__file__), 'README.rst')).read(),
