@@ -18,7 +18,7 @@ IpGeoBase importer
 2.  Конвертирует базу в два файла:
 
     *   city.txt, вида: \<start\_ip\>-\<end\_ip\> base64(\<city_name\>);
-    *   region.txt, вида: \<start\_ip\>-\<end\_ip\> \<region\_code\>;
+    *   region.txt, вида: \<start\_ip\>-\<end\_ip\> \<region\_code\>; (01-99)
 3.  Скачивает списки TOR с torproject и blutmagie.de
 4.  Создает tor.txt, вида: \<start\_ip\>-\<end\_ip\> 1;
 

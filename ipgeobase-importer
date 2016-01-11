@@ -155,7 +155,7 @@ with open(os_path.join(output, "region.txt"), "w") as reg:
             info = database[ip_range]
             city.write("%s %s;\n" % (ip_range, info['city']))
             if info['reg_id']:
-                reg.write("%s %s;\n" % (ip_range, info['reg_id']))
+                reg.write("%s %02d;\n" % (ip_range, info['reg_id']))
 
 # Tor
 torlist = rget("https://torstatus.blutmagie.de/ip_list_exit.php"
