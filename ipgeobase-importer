@@ -136,11 +136,12 @@ for line in extracteddata.open("cities.txt").readlines():
     # Format is:
     # <city_id>\t<city_name>\t<region>\t<district>\t<lattitude>\t<longitude>
     cid, city, region_name = line.decode("cp1251").split("\t")[:3]
-    CITIES[cid] = {'city': b64encode(city.encode("utf8")).decode("utf8"),
-                   'reg_id': REGIONS.get(region_name)[0],
-                   'tz': REGIONS.get(region_name)[1]}
-    if cid == "1199":  # Zelenograd fix
-        CITIES[cid]['reg_id'] = 77
+    if REGIONS.get(region_name) is not None:
+        CITIES[cid] = {'city': b64encode(city.encode("utf8")).decode("utf8"),
+                       'reg_id': REGIONS.get(region_name)[0],
+                       'tz': REGIONS.get(region_name)[1]}
+        if cid == "1199":  # Zelenograd fix
+            CITIES[cid]['reg_id'] = 77
 
 for line in extracteddata.open("cidr_optim.txt").readlines():
     # Format is: <int_start>\t<int_end>\t<ip_range>\t<country_code>\tcity_id
@@ -156,10 +157,12 @@ with open(os_path.join(output, "region.txt"), "w") as reg:
         with open(os_path.join(output, "tz.txt"), "w") as tz:
             for ip_range in sorted(database):
                 info = database[ip_range]
-                city.write("%s %s;\n" % (ip_range, info['city']))
+                if info['city']:
+                    city.write("%s %s;\n" % (ip_range, info['city']))
                 if info['reg_id']:
                     reg.write("%s %02d;\n" % (ip_range, info['reg_id']))
-                    reg.write("%s %s;\n" % (ip_range, info['tz']))
+                if info['tz']:
+                    tz.write("%s %s;\n" % (ip_range, info['tz']))
 
 # Tor
 torlist = rget("https://torstatus.blutmagie.de/ip_list_exit.php"
