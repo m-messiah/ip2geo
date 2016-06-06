@@ -1,6 +1,6 @@
-.py[co]
 .idea
 MANIFEST
 dist
 build
 __pycache__
+*.py[cod]
