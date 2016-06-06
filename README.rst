@@ -9,8 +9,9 @@ IpGeoBase importer
         :target: https://pypi.python.org/pypi/ipgeobase-importer
 
 
-.. image:: https://travis-ci.org/m-messiah/ipgeobase-importer.svg?branch=master
+.. image:: https://img.shields.io/travis/m-messiah/ipgeobase-importer.svg?style=flat-square
     :target: https://travis-ci.org/m-messiah/ipgeobase-importer
+
 
 Импортер ipgeobase базы русских городов в файлы, понятные для nginx geoip module, с поддержкой кодов регионов РФ.
 
