@@ -1,0 +1,19 @@
+branches:
+  only:
+  - master
+language: python
+python:
+- '2.7'
+- '3.3'
+- '3.4'
+- '3.5'
+cache: pip
+sudo: false
+install: pip install -q -e .
+script: ipgeobase-importer tmp
+deploy:
+  provider: pypi
+  distributions: sdist bdist
+  user: m_messiah
+  password:
+    secure: s1GAUkmtuAP4b2zWY9RVba8yiZ1XqTcEl656isN5I4vc6ctQO+BCmnM6xB+Ijs1yfJCIGrDYLPRXiAVWXpEtCSWTa2AkGwlYNdM6sgKEBnCO9zPKhDlhXK7I7wAbiD6TkyhYXfj77YpNQZTshFVuJle9rvOeaCKISPaRP3aJk7ZuvrjpTBwE8Jr5lFT3ZXcuSfIUkhsFkYfdn2483Zi+9A9ERlbUp06O8GLutWmyR0s3bmWJmOW9WUShOEj/kowZKBvNhZWXQ8q7YwiqBJI3SMVfiS5xywOnaZ9/hlgfniz99DGPXP+KiqmRjGRul2zH0jLfh1clmReSr8p0E3UtA4372tWKlrw5Il7mul+1f2kRSJkDbHNDA4JLgNddmkJMjeIRxfNZR6yXDY2nOuc0x4TR4/VmtLxt1TCzVEw1yo/ddDnwdMwVSj3BfvjBdwBTowggsPi+OEFQiCdi+JODCP28dDq9clyTQQyJg6dbqHOg3ksluaWsUsqPH9KSh4hkVV2c3gG4GaDeaO80vuon2/99thAaaLyGWHVBuEHelsKKyluzEdl5koCpSkg8upwmmnONpy6ODRGTFOCOQFUXqaLfJ3Ixr0WrUjpuWXuIu/NMEmTpWRgQpcX9bX4H9J1OnVoH6aNOkS6PP4T3os8o+66S5J8ULe5hWFAalUGwgS8=
