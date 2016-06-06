@@ -6,7 +6,7 @@ from os.path import join, dirname
 setup(
     name='ipgeobase-importer',
     version='1.5',
-    packages=[''],
+    packages=[],
     url='https://github.com/m-messiah/ipgeobase-importer',
     license='MIT',
     author='m_messiah',
