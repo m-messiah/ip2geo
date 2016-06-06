@@ -10,7 +10,9 @@ python:
 cache: pip
 sudo: false
 install: pip install -q -e .
-script: ipgeobase-importer tmp
+script:
+  - ipgeobase-importer tmp
+  - cat tmp/city.txt | grep 0JzQvtGB0LrQstCw
 deploy:
   provider: pypi
   distributions: sdist bdist

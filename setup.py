@@ -1,5 +1,5 @@
 # coding=utf-8
-from distutils.core import setup
+from setuptools import setup
 
 from os.path import join, dirname
 
@@ -15,7 +15,7 @@ setup(
                 u'в совместимые с nginx geoIP map-файлы',
     long_description=open(join(dirname(__file__), 'README.rst')).read(),
     scripts=['ipgeobase-importer'],
-    install_requires=['requests', ],
+    install_requires=['requests'],
     keywords='ipgeobase tor nginx geoip',
     classifiers=[
         'Development Status :: 5 - Production/Stable',
