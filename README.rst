@@ -61,3 +61,28 @@ Nginx
         default 0;
         include geo/tor.txt;
     }
+
+
+MaxMind geo importer
+====================
+
+Скрипт импорта базы MaxMind в map для nginx (спасибо @ilnurkhal)
+
+Требует Python3, requests и iptools.
+
+Формат запуска:
+
+.. code:: bash
+    
+    ip-maxmind <lang> ipv<ipver> <filename> [filters]
+
+Где:
+
+* ``lang`` - язык, которым будут записаны названия городов (как они указаны в MaxMind)
+* ``ipver`` - версия IP для nginx (4 или 6)
+* ``filename`` - путь до файла вывода
+* filters - фильтры для базы вывода. Могут быть:
+
+    - include <COUNTRY_CODE> [<COUNTRY_CODE>...] - выводить города только из указанных стран.
+    - exclude <COUNTRY_CODE> [<COUNTRY_CODE>...] - выводить города, не из указанных стран.
+    - или не быть вообще, тогда вывод для всех стран.

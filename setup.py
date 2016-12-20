@@ -5,17 +5,17 @@ from os.path import join, dirname
 
 setup(
     name='ipgeobase-importer',
-    version='1.5',
+    version='1.6',
     packages=[],
     url='https://github.com/m-messiah/ipgeobase-importer',
     license='MIT',
     author='m_messiah',
     author_email='m.muzafarov@gmail.com',
-    description=u'Импорт ipgeobase и TOR баз '
+    description=u'Импорт ipgeobase, maxmind (py3 only) и TOR баз '
                 u'в совместимые с nginx geoIP map-файлы',
     long_description=open(join(dirname(__file__), 'README.rst')).read(),
-    scripts=['ipgeobase-importer'],
-    install_requires=['requests'],
+    scripts=['ipgeobase-importer', 'ip-maxmind'],
+    install_requires=['requests', 'iptools'],
     keywords='ipgeobase tor nginx geoip',
     classifiers=[
         'Development Status :: 5 - Production/Stable',
