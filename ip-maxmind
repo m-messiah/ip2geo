@@ -32,6 +32,32 @@ def join_data(ip, city_dict):
     ]
 
 
+args = sys.argv[1:]
+if len(args) < 3:
+    error(
+        "\nUsage:python3 Ip-maxmind.py language ip_ver path [filter]\n"
+        "\nExample:python3 Ip-maxmind.py ru ipv4 /full/path/to/file.txt"
+        "\n\nExample:python3 Ip-maxmind.py ru ipv4 "
+        "/full/path/to/file.txt include RU UA BY")
+
+language = args[0]
+filename = args[2]
+
+if len(args) > 3:
+    if args[3] != 'include' and args[3] != 'exclude':
+        error('4rd argument must be a include or exclude, not ' + args[3])
+    if len(args) <= 4:
+        error('nothing to ' + args[3])
+    else:
+        ei_action = args[3]
+        iso_codes = args[4:]  # for include or exclude
+
+if args[1].lower() in IP_VERSION:
+    ipver = IP_VERSION[args[1].lower()]
+else:
+    error('ip_version can be ipv4 or ipv6 not ' + args[1])
+
+
 archive = requests.get(
     'http://geolite.maxmind.com/download/geoip/database/GeoLite2-City-CSV.zip'
 )
@@ -49,39 +75,11 @@ with zipfile.ZipFile(io.BytesIO(archive.content)) as ziped_data:
         for x in ziped_data.namelist()
         if 'GeoLite2-City-Locations' in x
     ]
-
-    # arg testing
-    # args: lang ip_ver path include-exclude ISO_CODEs
-    args = sys.argv[1:]
-    if len(args) < 3:
-        error(
-            "\nUsage:python3 Ip-maxmind.py language ip_ver path "
-            "-optional(include or exclude one or more country)\n"
-            "\nExample:python3 Ip-maxmind.py ru ipv4 /full/path/to/file.txt"
-            "\n\nExample:python3 Ip-maxmind.py ru ipv4 "
-            "/full/path/to/file.txt include RU UA BY"
-            "\navailable_languages:" + ' '.join(available_languages))
-    if args[0] not in available_languages:
-        error('Unsuported language:' + args[0])
-
-    filename = args[2]
-
-    if len(args) > 3:
-        if args[3] != 'include' and args[3] != 'exclude':
-            error('4rd argument must be a include or exclude, not ' + args[3])
-        if len(args) <= 4:
-            error('nothing to ' + args[3])
-        else:
-            ei_action = args[3]
-            iso_codes = args[4:]  # for include or exclude
-
-    if args[1].lower() in IP_VERSION:
-        ipver = IP_VERSION[args[1].lower()]
-    else:
-        error('ip_version can be ipv4 or ipv6 not ' + args[1])
+    if language not in available_languages:
+        error('Unsuported language:' + language)
 
     city_locations_zip = os.path.join(
-        zip_name, 'GeoLite2-City-Locations-' + args[0] + '.csv')
+        zip_name, 'GeoLite2-City-Locations-' + language + '.csv')
     with ziped_data.open(city_locations_zip) as zip_city_locations:
         csv_city_locations = csv.reader(
             codecs.iterdecode(zip_city_locations, 'utf-8'), delimiter=',')
