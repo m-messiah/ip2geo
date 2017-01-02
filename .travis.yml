@@ -1,0 +1,5 @@
+language: go
+
+script:
+  - GOOS=linux  go build -o geo-importer
+  - GOOS=darwin go build -o geo-importer_mac
