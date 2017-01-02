@@ -1,5 +1,4 @@
-IpGeo importer
-==============
+# IpGeo importer
 
 Импортер ipgeo-данных в файлы, понятные для nginx geoip module, с поддержкой кодов регионов РФ.
 
