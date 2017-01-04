@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/fatih/color"
+	"net"
 	"os"
 	"path"
 	"strings"
@@ -41,4 +42,20 @@ func print_message(module, message, status string) {
 		status_mesage = color.BlueString(status)
 	}
 	fmt.Printf("%-10s | %-30s[%s]\n", module, message, status_mesage)
+}
+
+func get_ip_range(ipver int, network string) string {
+	if ipver == 4 {
+		_, ipnet, err := net.ParseCIDR(network)
+		if err != nil {
+			return ""
+		}
+		ipb := make(net.IP, net.IPv4len)
+		copy(ipb, ipnet.IP)
+		for i, v := range ipb {
+			ipb[i] = v | ^ipnet.Mask[i]
+		}
+		return fmt.Sprintf("%s-%s", ipnet.IP, ipb)
+	}
+	return network
 }

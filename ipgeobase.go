@@ -66,7 +66,7 @@ func ipgeobase_unpack(response []byte) []*zip.File {
 	return zip_reader.File
 }
 
-func read_csv(archive []*zip.File, filename string) chan []string {
+func read_ig_csv(archive []*zip.File, filename string) chan []string {
 	yield := make(chan []string)
 	go func() {
 		for _, file := range archive {
@@ -105,7 +105,7 @@ func read_csv(archive []*zip.File, filename string) chan []string {
 
 func ipgeobase_cities(archive []*zip.File) map[string]City {
 	cities := make(map[string]City)
-	for record := range read_csv(archive, "cities.txt") {
+	for record := range read_ig_csv(archive, "cities.txt") {
 		if len(record) < 3 {
 			print_message("IPGeobase", fmt.Sprintf("cities.txt too short line: %s", record), "FAIL")
 			continue
@@ -131,7 +131,7 @@ func ipgeobase_cities(archive []*zip.File) map[string]City {
 
 func ipgeobase_cidr(archive []*zip.File, cities map[string]City) map[string]City {
 	database := make(map[string]City)
-	for record := range read_csv(archive, "cidr_optim.txt") {
+	for record := range read_ig_csv(archive, "cidr_optim.txt") {
 		if len(record) < 5 {
 			print_message("IPGeobase", fmt.Sprintf("cidr_optim.txt too short line: %s", record), "FAIL")
 			continue
