@@ -1,5 +1,15 @@
 language: go
-
 script:
-  - GOOS=linux  go build -o ip2geo
-  - GOOS=darwin go build -o ip2geo-mac
+- GOOS=linux  go build -o ip2geo
+- GOOS=darwin go build -o ip2geo-mac
+deploy:
+  provider: releases
+  api_key:
+    secure: pnQ8xc9vk/uyztwA/4XfnKsFe21UlqoasDqVegcsClHos4cln+/BJlYWhcKj/A0ZyYmVFORYsxk0xZqaJFQhpgxt7iTQONxhvDu7X5xK0wADDhs7K65zkbfD31SKWiG8IFm/Jqf2XAiq95kfH4bSCc+bK8W+hlUIAuBmIH1yxcnKj9JDVHQUppFDridU1UnSx0M1G7OkRC8t169QMPtjOIZI9Nsg74rYfULH823dPDPvnaIhxqkjPbKQopzFd9vSW95aMEA0dYMtwaiDoBa2uAvyt1kiuio/J2H8kLypIkic6Azvu9G5BhFzofVZ2COuISSS+RTx6xhB8N5D1p5um4VKId5ZLurleIAZSewS1BiPATdCPkOQGQ94gvDwf5SEw3d4LDg1gdm2VDxr+zoK5kicvsaDq/hefOmsRpTRA5StRt+iBy1cPeECuLmFwOeBVL2a0EtLkJ/4fcVOfpN5jnB2ZbJ27LctutGqk6xyXmXYghow2iApbCyAHl4O+dQZTK3diWF5QRcOqv06AwogBeSvRAlhwWDulJI7xm3zWXuFQheh8lLcdPLUziYOm+Lz4Hy4PWA4VvnDZRomxUDup84p/QElgwKVmO6Jw+ypbwa22NVlZyAg7LcgQyX+4M3zDjXYcctx4iLzQ8CPWFgVMuwMNF25s7bz4ULudivPF2g=
+  file:
+    - ip2geo
+    - ip2geo-mac
+  skip_cleanup: true
+  on:
+    repo: m-messiah/ip2geo
+    tags: true
