@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/binary"
 	"fmt"
 	"github.com/fatih/color"
 	"net"
@@ -58,4 +59,11 @@ func get_ip_range(ipver int, network string) string {
 		return fmt.Sprintf("%s-%s", ipnet.IP, ipb)
 	}
 	return network
+}
+
+func ip2int(ip net.IP) uint32 {
+	if len(ip) == 16 {
+		return binary.BigEndian.Uint32(ip[12:16])
+	}
+	return binary.BigEndian.Uint32(ip)
 }

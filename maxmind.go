@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"sort"
 	"strconv"
@@ -32,7 +33,7 @@ func maxmind_generate(wg *sync.WaitGroup, output_dir, lang string, ipver int, in
 	if len(database) > 0 {
 		print_message("MaxMind", "Generate database", "OK")
 	}
-	maxmind_write_map(output_dir, database, ipver)
+	maxmind_write_map(output_dir, database)
 	print_message("MaxMind", "Write nginx maps", "OK")
 	defer wg.Done()
 }
@@ -127,13 +128,19 @@ func maxmind_network(archive []*zip.File, ipver int, locations map[string]Locati
 			print_message("MaxMind", fmt.Sprintf("GeoLite2-City-Blocks-IPv"+strconv.Itoa(ipver)+".csv"+" too short line: %s", record), "FAIL")
 			continue
 		}
+		ip_range := get_ip_range(ipver, record[0])
+		net_ip := net.ParseIP(strings.Split(ip_range, "-")[0])
+		if net_ip == nil {
+			continue
+		}
 		geo_id := record[1]
 		if location, ok := locations[geo_id]; ok {
 			database = append(database, Location{
 				ID:      geo_id,
 				City:    location.City,
-				Network: record[0],
+				Network: ip_range,
 				TZ:      location.TZ,
+				NetIP:   ip2int(net_ip),
 			})
 		}
 	}
@@ -144,15 +151,14 @@ func maxmind_network(archive []*zip.File, ipver int, locations map[string]Locati
 	return database
 }
 
-func maxmind_write_map(output_dir string, database Database, ipver int) {
+func maxmind_write_map(output_dir string, database Database) {
 	city := open_map_file(output_dir, "mm_city.txt")
 	// TODO: Convert TZ in delta format
 	// tz := open_map_file(output_dir, "mm_tz.txt")
 	defer city.Close()
 	// defer tz.Close()
 	for _, location := range database {
-		ip_range := get_ip_range(ipver, location.Network)
-		fmt.Fprintf(city, "%s %s;\n", ip_range, base64.StdEncoding.EncodeToString([]byte(location.City)))
+		fmt.Fprintf(city, "%s %s;\n", location.Network, base64.StdEncoding.EncodeToString([]byte(location.City)))
 		// fmt.Fprintf(tz, "%s %s;\n", ip_range, location.TZ)
 	}
 

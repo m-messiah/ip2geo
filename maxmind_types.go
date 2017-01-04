@@ -1,24 +1,18 @@
 package main
 
-import (
-	"bytes"
-	"net"
-)
-
 type Location struct {
 	ID      string
 	City    string
 	Network string
 	TZ      string
+	NetIP   uint32
 }
 
 // Sortable by network
 type Database []Location
 
 func (d Database) Less(i, j int) bool {
-	_, ipnet_i, _ := net.ParseCIDR(d[i].Network)
-	_, ipnet_j, _ := net.ParseCIDR(d[j].Network)
-	return bytes.Compare(ipnet_i.IP, ipnet_j.IP) < 0
+	return d[i].NetIP < d[j].NetIP
 }
 
 func (d Database) Len() int {
