@@ -1,5 +1,5 @@
 language: go
 
 script:
-  - GOOS=linux  go build -o geo-importer
-  - GOOS=darwin go build -o geo-importer_mac
+  - GOOS=linux  go build -o ip2geo
+  - GOOS=darwin go build -o ip2geo-mac
