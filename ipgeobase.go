@@ -14,12 +14,6 @@ import (
 	"sync"
 )
 
-type City struct {
-	Name   string
-	Reg_ID int
-	TZ     string
-}
-
 func ipgeobase_generate(wg *sync.WaitGroup, output_dir string) {
 	answer := ipgeobase_download()
 	if answer != nil {
@@ -155,13 +149,13 @@ func ipgeobase_write_map(output_dir string, database map[string]City) {
 	defer reg.Close()
 	defer city.Close()
 	defer tz.Close()
-	ip_ranges := make([]string, len(database))
+	ip_ranges := make(IPList, len(database))
 	i := 0
 	for ip_range := range database {
 		ip_ranges[i] = ip_range
 		i++
 	}
-	sort.Strings(ip_ranges)
+	sort.Sort(ip_ranges)
 	for _, ip_range := range ip_ranges {
 		info := database[ip_range]
 		fmt.Fprintf(city, "%s %s;\n", ip_range, base64.StdEncoding.EncodeToString([]byte(info.Name)))

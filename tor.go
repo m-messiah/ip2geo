@@ -82,22 +82,22 @@ func tor_torproject_download(ch chan map[string]bool) {
 	ch <- torproject
 }
 
-func tor_merge(ch chan map[string]bool) []string {
+func tor_merge(ch chan map[string]bool) IPList {
 	a := <-ch
 	for k, v := range <-ch {
 		a[k] = v
 	}
-	ip_list := make([]string, len(a))
+	ip_list := make(IPList, len(a))
 	i := 0
 	for ip := range a {
 		ip_list[i] = ip
 		i++
 	}
-	sort.Strings(ip_list)
+	sort.Sort(ip_list)
 	return ip_list
 }
 
-func tor_write_map(output_dir string, torlist []string) {
+func tor_write_map(output_dir string, torlist IPList) {
 	tor := open_map_file(output_dir, "tor.txt")
 	defer tor.Close()
 	for _, ip := range torlist {
