@@ -2,8 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
-	"github.com/fatih/color"
 	"os"
 	"sync"
 )
@@ -25,7 +23,7 @@ func main() {
 		*maxmind = true
 	}
 	os.MkdirAll(*output_dir, 0755)
-	fmt.Printf("Use %s as output directory\n", color.BlueString("%s", *output_dir))
+	print_message(" ", "Use output directory", *output_dir)
 	var wg sync.WaitGroup
 	if *ipgeobase {
 		wg.Add(1)

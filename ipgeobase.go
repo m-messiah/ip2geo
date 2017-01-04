@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"encoding/csv"
 	"fmt"
-	"github.com/fatih/color"
 	"golang.org/x/net/html/charset"
 	"io"
 	"io/ioutil"
@@ -22,42 +21,37 @@ type City struct {
 }
 
 func ipgeobase_generate(wg *sync.WaitGroup, output_dir string) {
-	fmt.Printf("[IPGeobase] Download\t\t\t\t")
 	answer := ipgeobase_download()
 	if answer != nil {
-		color.Green("[OK]")
+		print_message("IPGeobase", "Download", "OK")
 	}
-	fmt.Printf("[IPGeobase] Unpack\t\t\t\t")
 	archive := ipgeobase_unpack(answer)
 	if archive != nil {
-		color.Green("[OK]")
+		print_message("IPGeobase", "Unpack", "OK")
 	}
-	fmt.Printf("[IPGeobase] Generate cities\t\t\t")
 	cities := ipgeobase_cities(archive)
 	if len(cities) > 0 {
-		color.Green("[OK]")
+		print_message("IPGeobase", "Generate cities", "OK")
 	}
-	fmt.Printf("[IPGeobase] Generate database\t\t\t")
 	database := ipgeobase_cidr(archive, cities)
 	if len(database) > 0 {
-		color.Green("[OK]")
+		print_message("IPGeobase", "Generate database", "OK")
 	}
-	fmt.Printf("[IPGeobase] Nginx maps\t\t\t\t")
 	ipgeobase_write_map(output_dir, database)
-	color.Green("[OK]")
+	print_message("IPGeobase", "Write nginx maps", "OK")
 	defer wg.Done()
 }
 
 func ipgeobase_download() []byte {
 	resp, err := http.Get("http://ipgeobase.ru/files/db/Main/geo_files.zip")
 	if err != nil {
-		color.Red("[FAIL]\nUrl no answer: %s", err.Error())
+		print_message("IPGeobase", "Download no answer", "FAIL")
 		return nil
 	}
 	defer resp.Body.Close()
 	answer, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		color.Red("[FAIL]\nCan't read answer: %s", err.Error())
+		print_message("IPGeobase", "Download bad answer", "FAIL")
 		return nil
 	}
 	return answer
@@ -66,7 +60,7 @@ func ipgeobase_download() []byte {
 func ipgeobase_unpack(response []byte) []*zip.File {
 	zip_reader, err := zip.NewReader(bytes.NewReader(response), int64(len(response)))
 	if err != nil {
-		color.Red("[FAIL]\nBad zip file: %s", err.Error())
+		print_message("IPGeobase", "Bad zip file", "FAIL")
 		return nil
 	}
 	return zip_reader.File
@@ -79,13 +73,13 @@ func read_csv(archive []*zip.File, filename string) chan []string {
 			if file.Name == filename {
 				fp, err := file.Open()
 				if err != nil {
-					color.Red("[FAIL]\nCan't open %s: %s", filename, err.Error())
+					print_message("IPGeobase", fmt.Sprintf("Can't open %s", filename), "FAIL")
 					yield <- nil
 				}
 				defer fp.Close()
 				utf8, err := charset.NewReader(fp, "text/csv; charset=windows-1251")
 				if err != nil {
-					color.Red("[FAIL]\n%s not in cp1251!: %s", filename, err.Error())
+					print_message("IPGeobase", fmt.Sprintf("%s not in cp1251", filename), "FAIL")
 					yield <- nil
 				}
 				r := csv.NewReader(utf8)
@@ -97,7 +91,7 @@ func read_csv(archive []*zip.File, filename string) chan []string {
 						break
 					}
 					if err != nil {
-						color.Yellow("[WARN]\ncan't read line from %s: %s", filename, err.Error())
+						print_message("IPGeobase", fmt.Sprintf("Can't read line from %s", filename), "WARN")
 						continue
 					}
 					yield <- record
@@ -113,7 +107,7 @@ func ipgeobase_cities(archive []*zip.File) map[string]City {
 	cities := make(map[string]City)
 	for record := range read_csv(archive, "cities.txt") {
 		if len(record) < 3 {
-			color.Red("[FAIL]\ncities.txt too short line: %s", record)
+			print_message("IPGeobase", fmt.Sprintf("cities.txt too short line: %s", record), "FAIL")
 			continue
 		}
 		// Format is:  <city_id>\t<city_name>\t<region>\t<district>\t<lattitude>\t<longitude>
@@ -130,7 +124,7 @@ func ipgeobase_cities(archive []*zip.File) map[string]City {
 		}
 	}
 	if len(cities) < 1 {
-		color.Red("[FAIL]\nCities db is empty")
+		print_message("IPGeobase", "Cities db is empty", "FAIL")
 	}
 	return cities
 }
@@ -139,7 +133,7 @@ func ipgeobase_cidr(archive []*zip.File, cities map[string]City) map[string]City
 	database := make(map[string]City)
 	for record := range read_csv(archive, "cidr_optim.txt") {
 		if len(record) < 5 {
-			color.Red("[FAIL]\ncidr_optim.txt too short line: %s", record)
+			print_message("IPGeobase", fmt.Sprintf("cidr_optim.txt too short line: %s", record), "FAIL")
 			continue
 		}
 		// Format is: <int_start>\t<int_end>\t<ip_range>\t<country_code>\tcity_id
@@ -149,7 +143,7 @@ func ipgeobase_cidr(archive []*zip.File, cities map[string]City) map[string]City
 		}
 	}
 	if len(database) < 1 {
-		color.Red("[FAIL]\nDatabase is empty")
+		print_message("IPGeobase", "Database is empty", "FAIL")
 	}
 	return database
 }

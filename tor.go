@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"github.com/fatih/color"
 	"io"
 	"net/http"
 	"sort"
@@ -12,26 +11,22 @@ import (
 )
 
 func tor_generate(wg *sync.WaitGroup, output_dir string) {
-	fmt.Printf("[TOR] Blutmagie Download\t\t\t")
 	torlists := make(chan map[string]bool, 2)
 	go tor_blutmagie_download(torlists)
-	fmt.Printf("[TOR] Torproject Download\t\t\t")
 	go tor_torproject_download(torlists)
-	fmt.Printf("[TOR] Merge\t\t\t\t\t")
 	torlist := tor_merge(torlists)
 	if torlist != nil {
-		color.Green("[OK]")
+		print_message("TOR", "Merge", "OK")
 	}
-	fmt.Printf("[TOR] Nginx maps\t\t\t\t")
 	tor_write_map(output_dir, torlist)
-	color.Green("[OK]")
+	print_message("TOR", "Write nginx maps", "OK")
 	defer wg.Done()
 }
 
 func tor_blutmagie_download(ch chan map[string]bool) {
 	resp, err := http.Get("https://torstatus.blutmagie.de/ip_list_exit.php/Tor_ip_list_EXIT.csv")
 	if err != nil {
-		color.Red("[FAIL]\nUrl no answer: %s", err.Error())
+		print_message("TOR", "Blutmagie Download", "FAIL")
 		return
 	}
 	defer resp.Body.Close()
@@ -44,7 +39,7 @@ func tor_blutmagie_download(ch chan map[string]bool) {
 			break
 		}
 		if err != nil {
-			color.Yellow("[WARN]\ncan't read line from blutmagie: %s", err.Error())
+			print_message("TOR", "can't read line from blutmagie", "WARN")
 			continue
 		}
 		if len(line) < 1 {
@@ -52,13 +47,14 @@ func tor_blutmagie_download(ch chan map[string]bool) {
 		}
 		torlist[strings.TrimSpace(line)] = true
 	}
+	print_message("TOR", "Blutmagie Download", "OK")
 	ch <- torlist
 }
 
 func tor_torproject_download(ch chan map[string]bool) {
 	resp, err := http.Get("https://check.torproject.org/exit-addresses")
 	if err != nil {
-		color.Red("[FAIL]\nUrl no answer: %s", err.Error())
+		print_message("TOR", "Torproject Download", "FAIL")
 		return
 	}
 	defer resp.Body.Close()
@@ -70,7 +66,7 @@ func tor_torproject_download(ch chan map[string]bool) {
 			break
 		}
 		if err != nil {
-			color.Yellow("[WARN]\ncan't read line from torproject: %s", err.Error())
+			print_message("TOR", "Can't read line from torproject", "WARN")
 			continue
 		}
 		if len(line) < 1 {
@@ -82,6 +78,7 @@ func tor_torproject_download(ch chan map[string]bool) {
 		fields := strings.Fields(line)
 		torproject[fields[1]] = true
 	}
+	print_message("TOR", "Torproject Download", "OK")
 	ch <- torproject
 }
 

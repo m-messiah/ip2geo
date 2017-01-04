@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/fatih/color"
 	"os"
 	"path"
@@ -25,4 +26,19 @@ func open_map_file(output_dir, filename string) *os.File {
 		return nil
 	}
 	return f
+}
+
+func print_message(module, message, status string) {
+	var status_mesage string
+	switch status {
+	case "OK":
+		status_mesage = color.GreenString(status)
+	case "FAIL":
+		status_mesage = color.RedString(status)
+	case "WARN":
+		status_mesage = color.YellowString(status)
+	default:
+		status_mesage = color.BlueString(status)
+	}
+	fmt.Printf("%-10s | %-30s[%s]\n", module, message, status_mesage)
 }
