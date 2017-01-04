@@ -5,14 +5,16 @@ from os.path import join, dirname
 
 setup(
     name='ipgeobase-importer',
-    version='1.6.2',
+    version='1.6.3',
     packages=[],
     url='https://github.com/m-messiah/ipgeobase-importer',
     license='MIT',
     author='m_messiah',
     author_email='m.muzafarov@gmail.com',
     description=u'Импорт ipgeobase, maxmind (py3 only) и TOR баз '
-                u'в совместимые с nginx geoIP map-файлы',
+                u'в совместимые с nginx geoIP map-файлы.\n'
+                u'DEPRECATED в пользу go-версии: '
+                u'https://github.com/m-messiah/ip2geo',
     long_description=open(join(dirname(__file__), 'README.rst')).read(),
     scripts=['ipgeobase-importer', 'ip-maxmind'],
     install_requires=['requests', 'iptools'],

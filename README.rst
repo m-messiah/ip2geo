@@ -1,3 +1,11 @@
+DEPRECATED
+==========
+
+Даннная версия импортировщика устаревшая.
+Актуальный ip2geo здесь: https://github.com/m-messiah/ip2geo
+
+Please, check out: https://github.com/m-messiah/ip2geo for actual version
+
 IpGeoBase importer
 ==================
 
@@ -11,7 +19,6 @@ IpGeoBase importer
 
 .. image:: https://img.shields.io/travis/m-messiah/ipgeobase-importer.svg?style=flat-square
     :target: https://travis-ci.org/m-messiah/ipgeobase-importer
-
 
 Импортер ipgeobase базы русских городов в файлы, понятные для nginx geoip module, с поддержкой кодов регионов РФ.
 
