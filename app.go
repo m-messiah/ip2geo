@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/fatih/color"
 	"os"
+	"sync"
 )
 
 func main() {
@@ -25,11 +26,19 @@ func main() {
 	}
 	os.MkdirAll(*output_dir, 0755)
 	fmt.Printf("Use %s as output directory\n", color.BlueString("%s", *output_dir))
+	var wg sync.WaitGroup
 	if *ipgeobase {
-		ipgeobase_generate(*output_dir)
+		wg.Add(1)
+		go ipgeobase_generate(&wg, *output_dir)
 	}
 
 	if *tor {
-		tor_generate(*output_dir)
+		wg.Add(1)
+		go tor_generate(&wg, *output_dir)
 	}
+
+	// if *maxmind {
+	// 	maxmind_generate(*output_dir, *maxmind_lang, *maxmind_ipver, *maxmind_include, *maxmind_exclude)
+	// }
+	wg.Wait()
 }

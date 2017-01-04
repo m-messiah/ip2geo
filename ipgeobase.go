@@ -12,6 +12,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"sort"
+	"sync"
 )
 
 type City struct {
@@ -20,7 +21,7 @@ type City struct {
 	TZ     string
 }
 
-func ipgeobase_generate(output_dir string) {
+func ipgeobase_generate(wg *sync.WaitGroup, output_dir string) {
 	fmt.Printf("[IPGeobase] Download\t\t\t\t")
 	answer := ipgeobase_download()
 	if answer != nil {
@@ -44,6 +45,7 @@ func ipgeobase_generate(output_dir string) {
 	fmt.Printf("[IPGeobase] Nginx maps\t\t\t\t")
 	ipgeobase_write_map(output_dir, database)
 	color.Green("[OK]")
+	defer wg.Done()
 }
 
 func ipgeobase_download() []byte {

@@ -8,34 +8,31 @@ import (
 	"net/http"
 	"sort"
 	"strings"
+	"sync"
 )
 
-func tor_generate(output_dir string) {
+func tor_generate(wg *sync.WaitGroup, output_dir string) {
 	fmt.Printf("[TOR] Blutmagie Download\t\t\t")
-	torlist := tor_blutmagie_download()
-	if torlist != nil {
-		color.Green("[OK]")
-	}
+	torlists := make(chan map[string]bool, 2)
+	go tor_blutmagie_download(torlists)
 	fmt.Printf("[TOR] Torproject Download\t\t\t")
-	torproject := tor_torproject_download()
-	if torproject != nil {
-		color.Green("[OK]")
-	}
+	go tor_torproject_download(torlists)
 	fmt.Printf("[TOR] Merge\t\t\t\t\t")
-	tor_merge(torlist, torproject)
+	torlist := tor_merge(torlists)
 	if torlist != nil {
 		color.Green("[OK]")
 	}
 	fmt.Printf("[TOR] Nginx maps\t\t\t\t")
 	tor_write_map(output_dir, torlist)
 	color.Green("[OK]")
+	defer wg.Done()
 }
 
-func tor_blutmagie_download() map[string]bool {
+func tor_blutmagie_download(ch chan map[string]bool) {
 	resp, err := http.Get("https://torstatus.blutmagie.de/ip_list_exit.php/Tor_ip_list_EXIT.csv")
 	if err != nil {
 		color.Red("[FAIL]\nUrl no answer: %s", err.Error())
-		return nil
+		return
 	}
 	defer resp.Body.Close()
 	torlist := make(map[string]bool)
@@ -55,14 +52,14 @@ func tor_blutmagie_download() map[string]bool {
 		}
 		torlist[strings.TrimSpace(line)] = true
 	}
-	return torlist
+	ch <- torlist
 }
 
-func tor_torproject_download() map[string]bool {
+func tor_torproject_download(ch chan map[string]bool) {
 	resp, err := http.Get("https://check.torproject.org/exit-addresses")
 	if err != nil {
 		color.Red("[FAIL]\nUrl no answer: %s", err.Error())
-		return nil
+		return
 	}
 	defer resp.Body.Close()
 	torproject := make(map[string]bool)
@@ -85,26 +82,28 @@ func tor_torproject_download() map[string]bool {
 		fields := strings.Fields(line)
 		torproject[fields[1]] = true
 	}
-	return torproject
+	ch <- torproject
 }
 
-func tor_merge(a, b map[string]bool) {
-	for k, v := range b {
+func tor_merge(ch chan map[string]bool) []string {
+	a := <-ch
+	for k, v := range <-ch {
 		a[k] = v
 	}
-}
-
-func tor_write_map(output_dir string, torlist map[string]bool) {
-	tor := open_map_file(output_dir, "tor.txt")
-	defer tor.Close()
-	ip_list := make([]string, len(torlist))
+	ip_list := make([]string, len(a))
 	i := 0
-	for ip := range torlist {
+	for ip := range a {
 		ip_list[i] = ip
 		i++
 	}
 	sort.Strings(ip_list)
-	for _, ip := range ip_list {
+	return ip_list
+}
+
+func tor_write_map(output_dir string, torlist []string) {
+	tor := open_map_file(output_dir, "tor.txt")
+	defer tor.Close()
+	for _, ip := range torlist {
 		fmt.Fprintf(tor, "%s-%s 1;\n", ip, ip)
 	}
 
