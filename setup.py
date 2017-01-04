@@ -12,9 +12,7 @@ setup(
     author='m_messiah',
     author_email='m.muzafarov@gmail.com',
     description=u'Импорт ipgeobase, maxmind (py3 only) и TOR баз '
-                u'в совместимые с nginx geoIP map-файлы.\n'
-                u'DEPRECATED в пользу go-версии: '
-                u'https://github.com/m-messiah/ip2geo',
+                u'в совместимые с nginx geoIP map-файлы.',
     long_description=open(join(dirname(__file__), 'README.rst')).read(),
     scripts=['ipgeobase-importer', 'ip-maxmind'],
     install_requires=['requests', 'iptools'],
