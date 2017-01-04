@@ -28,4 +28,8 @@ func main() {
 	if *ipgeobase {
 		ipgeobase_generate(*output_dir)
 	}
+
+	if *tor {
+		tor_generate(*output_dir)
+	}
 }
