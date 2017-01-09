@@ -2,6 +2,7 @@
 
 [![Travis](https://img.shields.io/travis/m-messiah/ip2geo.svg)](https://travis-ci.org/m-messiah/ip2geo)
 [![GitHub release](https://img.shields.io/github/release/m-messiah/ip2geo.svg)](https://github.com/m-messiah/ip2geo)
+[![Github Releases](https://img.shields.io/github/downloads/m-messiah/ip2geo/latest/total.svg)](https://github.com/m-messiah/ip2geo)
 
 Импортер ipgeo-данных в файлы, понятные для nginx geoip module, с поддержкой кодов регионов РФ.
 
