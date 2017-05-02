@@ -4,7 +4,7 @@
 [![GitHub release](https://img.shields.io/github/release/m-messiah/ip2geo.svg)](https://github.com/m-messiah/ip2geo)
 [![Github Releases](https://img.shields.io/github/downloads/m-messiah/ip2geo/latest/total.svg)](https://github.com/m-messiah/ip2geo)
 
-Импортер ipgeo-данных в файлы, понятные для nginx geoip module, с поддержкой кодов регионов РФ.
+Импортер ipgeo-данных в файлы, понятные для [nginx geo module](http://nginx.org/ru/docs/http/ngx_http_geo_module.html), с поддержкой кодов регионов РФ.
 
 Поддерживает Ipgeobase.ru, TOR-списки, MaxMind GeoLite (для городов).
 
