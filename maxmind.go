@@ -14,9 +14,10 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 )
 
-func maxmindGenerate(wg *sync.WaitGroup, outputDir, lang string, ipver int, include, exclude string) {
+func maxmindGenerate(wg *sync.WaitGroup, outputDir, lang string, ipver int, tzNames bool, include, exclude string) {
 	answer := maxmindDownload()
 	if answer != nil {
 		printMessage("MaxMind", "Download", "OK")
@@ -25,7 +26,7 @@ func maxmindGenerate(wg *sync.WaitGroup, outputDir, lang string, ipver int, incl
 	if archive != nil {
 		printMessage("MaxMind", "Unpack", "OK")
 	}
-	cities := maxmindCities(archive, lang, include, exclude)
+	cities := maxmindCities(archive, lang, tzNames, include, exclude)
 	if len(cities) > 0 {
 		printMessage("MaxMind", "Generate cities", "OK")
 	}
@@ -94,8 +95,9 @@ func readMaxMindCSV(archive []*zip.File, filename string) chan []string {
 	return yield
 }
 
-func maxmindCities(archive []*zip.File, language, include, exclude string) map[string]Location {
+func maxmindCities(archive []*zip.File, language string, tznames bool, include, exclude string) map[string]Location {
 	locations := make(map[string]Location)
+	currentTime := time.Now()
 	for record := range readMaxMindCSV(archive, "GeoLite2-City-Locations-"+language+".csv") {
 		if len(record) < 13 {
 			printMessage("MaxMind", fmt.Sprintf("GeoLite2-City-Locations-"+language+".csv"+" too short line: %s", record), "FAIL")
@@ -107,10 +109,14 @@ func maxmindCities(archive []*zip.File, language, include, exclude string) map[s
 		}
 		if len(include) < 1 || strings.Contains(include, country) {
 			if !strings.Contains(exclude, country) {
+				tz := record[12]
+				if !tznames {
+					tz = convertTZToOffset(currentTime, record[12])
+				}
 				locations[record[0]] = Location{
 					ID:   record[0],
 					City: record[10],
-					TZ:   record[12],
+					TZ:   tz,
 				}
 			}
 		}
@@ -151,15 +157,22 @@ func maxmindNetwork(archive []*zip.File, ipver int, locations map[string]Locatio
 	return database
 }
 
+func convertTZToOffset(t time.Time, tz string) string {
+	location, err := time.LoadLocation(tz)
+	if err != nil {
+		return ""
+	}
+	_, offset := t.In(location).Zone()
+	return fmt.Sprintf("UTC%+d", offset/3600)
+}
+
 func maxmindWriteMap(outputDir string, database Database) {
 	city := openMapFile(outputDir, "mm_city.txt")
-	// TODO: Convert TZ in delta format
-	// tz := openMapFile(outputDir, "mm_tz.txt")
+	tz := openMapFile(outputDir, "mm_tz.txt")
 	defer city.Close()
-	// defer tz.Close()
+	defer tz.Close()
 	for _, location := range database {
 		fmt.Fprintf(city, "%s %s;\n", location.Network, base64.StdEncoding.EncodeToString([]byte(location.City)))
-		// fmt.Fprintf(tz, "%s %s;\n", ipRange, location.TZ)
+		fmt.Fprintf(tz, "%s %s;\n", location.Network, location.TZ)
 	}
-
 }

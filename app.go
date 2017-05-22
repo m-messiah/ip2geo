@@ -11,8 +11,9 @@ func main() {
 	ipgeobase := flag.Bool("ipgeobase", false, "enable ipgeobase generation")
 	tor := flag.Bool("tor", false, "enable tor generation")
 	maxmind := flag.Bool("maxmind", false, "enable maxmind generation")
-	maxmindLang := flag.String("lang", "ru", "MaxMind city name language")
 	maxmindIPVer := flag.Int("ipver", 4, "MaxMind ip version (4 or 6)")
+	maxmindLang := flag.String("lang", "ru", "MaxMind city name language")
+	maxmindTZNames := flag.Bool("tznames", false, "MaxMind TZ in names format (for example `Europe/Moscow`)")
 	maxmindInclude := flag.String("include", "", "MaxMind output filter: only these countries")
 	maxmindExclude := flag.String("exclude", "", "MaxMind output filter: except these countries")
 	flag.Parse()
@@ -37,7 +38,7 @@ func main() {
 
 	if *maxmind {
 		wg.Add(1)
-		go maxmindGenerate(&wg, *outputDir, *maxmindLang, *maxmindIPVer, *maxmindInclude, *maxmindExclude)
+		go maxmindGenerate(&wg, *outputDir, *maxmindLang, *maxmindIPVer, *maxmindTZNames, *maxmindInclude, *maxmindExclude)
 	}
 
 	wg.Wait()

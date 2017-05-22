@@ -27,7 +27,7 @@
     -tor
         Генерация списков TOR нод.
     -maxmind
-        Генерация баз MaxMind (название города)
+        Генерация баз MaxMind (название города, часовой пояс)
     Дальше параметры для MaxMind:
     -lang string
         Язык MaxMind баз (по умолчанию ru)
@@ -66,6 +66,7 @@ geo $tz {
     ranges;
     default "UTC+3";
     include geo/tz.txt;
+    include geo/mm_tz.txt;
 }
 ```
 
