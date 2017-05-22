@@ -1,5 +1,6 @@
 package main
 
+// Location MaxMind main structure
 type Location struct {
 	ID      string
 	City    string
@@ -8,7 +9,7 @@ type Location struct {
 	NetIP   uint32
 }
 
-// Sortable by network
+// Database sortable by network
 type Database []Location
 
 func (d Database) Less(i, j int) bool {

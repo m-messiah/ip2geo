@@ -6,13 +6,13 @@ import (
 	"strings"
 )
 
-// Sortable by network
+// IPList sortable by network
 type IPList []string
 
 func (d IPList) Less(i, j int) bool {
-	ip_i := net.ParseIP(strings.Split(d[i], "-")[0])
-	ip_j := net.ParseIP(strings.Split(d[j], "-")[0])
-	return bytes.Compare(ip_i, ip_j) < 0
+	ipI := net.ParseIP(strings.Split(d[i], "-")[0])
+	ipJ := net.ParseIP(strings.Split(d[j], "-")[0])
+	return bytes.Compare(ipI, ipJ) < 0
 }
 
 func (d IPList) Len() int {

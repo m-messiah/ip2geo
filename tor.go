@@ -10,23 +10,23 @@ import (
 	"sync"
 )
 
-func tor_generate(wg *sync.WaitGroup, output_dir string) {
-	torlists := make(chan map[string]bool, 2)
-	go tor_blutmagie_download(torlists)
-	go tor_torproject_download(torlists)
-	torlist := tor_merge(torlists)
+func torGenerate(wg *sync.WaitGroup, outputDir string) {
+	torLists := make(chan map[string]bool, 2)
+	go torBlutmagieDownload(torLists)
+	go torTorProjectDownload(torLists)
+	torlist := torMerge(torLists)
 	if torlist != nil {
-		print_message("TOR", "Merge", "OK")
+		printMessage("TOR", "Merge", "OK")
 	}
-	tor_write_map(output_dir, torlist)
-	print_message("TOR", "Write nginx maps", "OK")
+	torWriteMap(outputDir, torlist)
+	printMessage("TOR", "Write nginx maps", "OK")
 	defer wg.Done()
 }
 
-func tor_blutmagie_download(ch chan map[string]bool) {
+func torBlutmagieDownload(ch chan map[string]bool) {
 	resp, err := http.Get("https://torstatus.blutmagie.de/ip_list_exit.php/Tor_ip_list_EXIT.csv")
 	if err != nil {
-		print_message("TOR", "Blutmagie Download", "FAIL")
+		printMessage("TOR", "Blutmagie Download", "FAIL")
 		return
 	}
 	defer resp.Body.Close()
@@ -39,7 +39,7 @@ func tor_blutmagie_download(ch chan map[string]bool) {
 			break
 		}
 		if err != nil {
-			print_message("TOR", "can't read line from blutmagie", "WARN")
+			printMessage("TOR", "can't read line from blutmagie", "WARN")
 			continue
 		}
 		if len(line) < 1 {
@@ -47,14 +47,14 @@ func tor_blutmagie_download(ch chan map[string]bool) {
 		}
 		torlist[strings.TrimSpace(line)] = true
 	}
-	print_message("TOR", "Blutmagie Download", "OK")
+	printMessage("TOR", "Blutmagie Download", "OK")
 	ch <- torlist
 }
 
-func tor_torproject_download(ch chan map[string]bool) {
+func torTorProjectDownload(ch chan map[string]bool) {
 	resp, err := http.Get("https://check.torproject.org/exit-addresses")
 	if err != nil {
-		print_message("TOR", "Torproject Download", "FAIL")
+		printMessage("TOR", "Torproject Download", "FAIL")
 		return
 	}
 	defer resp.Body.Close()
@@ -66,7 +66,7 @@ func tor_torproject_download(ch chan map[string]bool) {
 			break
 		}
 		if err != nil {
-			print_message("TOR", "Can't read line from torproject", "WARN")
+			printMessage("TOR", "Can't read line from torproject", "WARN")
 			continue
 		}
 		if len(line) < 1 {
@@ -78,27 +78,27 @@ func tor_torproject_download(ch chan map[string]bool) {
 		fields := strings.Fields(line)
 		torproject[fields[1]] = true
 	}
-	print_message("TOR", "Torproject Download", "OK")
+	printMessage("TOR", "Torproject Download", "OK")
 	ch <- torproject
 }
 
-func tor_merge(ch chan map[string]bool) IPList {
+func torMerge(ch chan map[string]bool) IPList {
 	a := <-ch
 	for k, v := range <-ch {
 		a[k] = v
 	}
-	ip_list := make(IPList, len(a))
+	ipList := make(IPList, len(a))
 	i := 0
 	for ip := range a {
-		ip_list[i] = ip
+		ipList[i] = ip
 		i++
 	}
-	sort.Sort(ip_list)
-	return ip_list
+	sort.Sort(ipList)
+	return ipList
 }
 
-func tor_write_map(output_dir string, torlist IPList) {
-	tor := open_map_file(output_dir, "tor.txt")
+func torWriteMap(outputDir string, torlist IPList) {
+	tor := openMapFile(outputDir, "tor.txt")
 	defer tor.Close()
 	for _, ip := range torlist {
 		fmt.Fprintf(tor, "%s-%s 1;\n", ip, ip)

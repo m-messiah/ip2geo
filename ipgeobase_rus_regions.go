@@ -1,11 +1,13 @@
 package main
 
-type Reg_info struct {
+// RegInfo - Code and TZ for region
+type RegInfo struct {
 	ID int
 	TZ string
 }
 
-var REGIONS = map[string]Reg_info{
+// REGIONS - list of russian regions
+var REGIONS = map[string]RegInfo{
 	"Республика Адыгея":                   {1, "UTC+3"},
 	"Республика Башкортостан":             {2, "UTC+5"},
 	"Республика Бурятия":                  {3, "UTC+8"},

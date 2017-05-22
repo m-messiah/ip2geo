@@ -1,7 +1,8 @@
 package main
 
+// City ipgeobase main structure
 type City struct {
-	Name   string
-	Reg_ID int
-	TZ     string
+	Name  string
+	RegID int
+	TZ    string
 }

@@ -16,60 +16,60 @@ import (
 	"sync"
 )
 
-func maxmind_generate(wg *sync.WaitGroup, output_dir, lang string, ipver int, include, exclude string) {
-	answer := maxmind_download()
+func maxmindGenerate(wg *sync.WaitGroup, outputDir, lang string, ipver int, include, exclude string) {
+	answer := maxmindDownload()
 	if answer != nil {
-		print_message("MaxMind", "Download", "OK")
+		printMessage("MaxMind", "Download", "OK")
 	}
-	archive := maxmind_unpack(answer)
+	archive := maxmindUnpack(answer)
 	if archive != nil {
-		print_message("MaxMind", "Unpack", "OK")
+		printMessage("MaxMind", "Unpack", "OK")
 	}
-	cities := maxmind_cities(archive, lang, include, exclude)
+	cities := maxmindCities(archive, lang, include, exclude)
 	if len(cities) > 0 {
-		print_message("MaxMind", "Generate cities", "OK")
+		printMessage("MaxMind", "Generate cities", "OK")
 	}
-	database := maxmind_network(archive, ipver, cities)
+	database := maxmindNetwork(archive, ipver, cities)
 	if len(database) > 0 {
-		print_message("MaxMind", "Generate database", "OK")
+		printMessage("MaxMind", "Generate database", "OK")
 	}
-	maxmind_write_map(output_dir, database)
-	print_message("MaxMind", "Write nginx maps", "OK")
+	maxmindWriteMap(outputDir, database)
+	printMessage("MaxMind", "Write nginx maps", "OK")
 	defer wg.Done()
 }
 
-func maxmind_download() []byte {
+func maxmindDownload() []byte {
 	resp, err := http.Get("http://geolite.maxmind.com/download/geoip/database/GeoLite2-City-CSV.zip")
 	if err != nil {
-		print_message("MaxMind", "Download no answer", "FAIL")
+		printMessage("MaxMind", "Download no answer", "FAIL")
 		return nil
 	}
 	defer resp.Body.Close()
 	answer, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		print_message("MaxMind", "Download bad answer", "FAIL")
+		printMessage("MaxMind", "Download bad answer", "FAIL")
 		return nil
 	}
 	return answer
 }
 
-func maxmind_unpack(response []byte) []*zip.File {
-	zip_reader, err := zip.NewReader(bytes.NewReader(response), int64(len(response)))
+func maxmindUnpack(response []byte) []*zip.File {
+	zipReader, err := zip.NewReader(bytes.NewReader(response), int64(len(response)))
 	if err != nil {
-		print_message("MaxMind", "Bad zip file", "FAIL")
+		printMessage("MaxMind", "Bad zip file", "FAIL")
 		return nil
 	}
-	return zip_reader.File
+	return zipReader.File
 }
 
-func read_mm_csv(archive []*zip.File, filename string) chan []string {
+func readMaxMindCSV(archive []*zip.File, filename string) chan []string {
 	yield := make(chan []string)
 	go func() {
 		for _, file := range archive {
 			if strings.Contains(file.Name, filename) {
 				fp, err := file.Open()
 				if err != nil {
-					print_message("MaxMind", fmt.Sprintf("Can't open %s", filename), "FAIL")
+					printMessage("MaxMind", fmt.Sprintf("Can't open %s", filename), "FAIL")
 					yield <- nil
 				}
 				defer fp.Close()
@@ -82,7 +82,7 @@ func read_mm_csv(archive []*zip.File, filename string) chan []string {
 						break
 					}
 					if err != nil {
-						print_message("MaxMind", fmt.Sprintf("Can't read line from %s", filename), "WARN")
+						printMessage("MaxMind", fmt.Sprintf("Can't read line from %s", filename), "WARN")
 						continue
 					}
 					yield <- record
@@ -94,11 +94,11 @@ func read_mm_csv(archive []*zip.File, filename string) chan []string {
 	return yield
 }
 
-func maxmind_cities(archive []*zip.File, language, include, exclude string) map[string]Location {
+func maxmindCities(archive []*zip.File, language, include, exclude string) map[string]Location {
 	locations := make(map[string]Location)
-	for record := range read_mm_csv(archive, "GeoLite2-City-Locations-"+language+".csv") {
+	for record := range readMaxMindCSV(archive, "GeoLite2-City-Locations-"+language+".csv") {
 		if len(record) < 13 {
-			print_message("MaxMind", fmt.Sprintf("GeoLite2-City-Locations-"+language+".csv"+" too short line: %s", record), "FAIL")
+			printMessage("MaxMind", fmt.Sprintf("GeoLite2-City-Locations-"+language+".csv"+" too short line: %s", record), "FAIL")
 			continue
 		}
 		country := record[4]
@@ -116,50 +116,50 @@ func maxmind_cities(archive []*zip.File, language, include, exclude string) map[
 		}
 	}
 	if len(locations) < 1 {
-		print_message("MaxMind", "Locations db is empty", "FAIL")
+		printMessage("MaxMind", "Locations db is empty", "FAIL")
 	}
 	return locations
 }
 
-func maxmind_network(archive []*zip.File, ipver int, locations map[string]Location) Database {
+func maxmindNetwork(archive []*zip.File, ipver int, locations map[string]Location) Database {
 	var database Database
-	for record := range read_mm_csv(archive, "GeoLite2-City-Blocks-IPv"+strconv.Itoa(ipver)+".csv") {
+	for record := range readMaxMindCSV(archive, "GeoLite2-City-Blocks-IPv"+strconv.Itoa(ipver)+".csv") {
 		if len(record) < 2 {
-			print_message("MaxMind", fmt.Sprintf("GeoLite2-City-Blocks-IPv"+strconv.Itoa(ipver)+".csv"+" too short line: %s", record), "FAIL")
+			printMessage("MaxMind", fmt.Sprintf("GeoLite2-City-Blocks-IPv"+strconv.Itoa(ipver)+".csv"+" too short line: %s", record), "FAIL")
 			continue
 		}
-		ip_range := get_ip_range(ipver, record[0])
-		net_ip := net.ParseIP(strings.Split(ip_range, "-")[0])
-		if net_ip == nil {
+		ipRange := getIPRange(ipver, record[0])
+		netIP := net.ParseIP(strings.Split(ipRange, "-")[0])
+		if netIP == nil {
 			continue
 		}
-		geo_id := record[1]
-		if location, ok := locations[geo_id]; ok {
+		geoID := record[1]
+		if location, ok := locations[geoID]; ok {
 			database = append(database, Location{
-				ID:      geo_id,
+				ID:      geoID,
 				City:    location.City,
-				Network: ip_range,
+				Network: ipRange,
 				TZ:      location.TZ,
-				NetIP:   ip2int(net_ip),
+				NetIP:   ip2Int(netIP),
 			})
 		}
 	}
 	if len(database) < 1 {
-		print_message("MaxMind", "Network db is empty", "FAIL")
+		printMessage("MaxMind", "Network db is empty", "FAIL")
 	}
 	sort.Sort(database)
 	return database
 }
 
-func maxmind_write_map(output_dir string, database Database) {
-	city := open_map_file(output_dir, "mm_city.txt")
+func maxmindWriteMap(outputDir string, database Database) {
+	city := openMapFile(outputDir, "mm_city.txt")
 	// TODO: Convert TZ in delta format
-	// tz := open_map_file(output_dir, "mm_tz.txt")
+	// tz := openMapFile(outputDir, "mm_tz.txt")
 	defer city.Close()
 	// defer tz.Close()
 	for _, location := range database {
 		fmt.Fprintf(city, "%s %s;\n", location.Network, base64.StdEncoding.EncodeToString([]byte(location.City)))
-		// fmt.Fprintf(tz, "%s %s;\n", ip_range, location.TZ)
+		// fmt.Fprintf(tz, "%s %s;\n", ipRange, location.TZ)
 	}
 
 }

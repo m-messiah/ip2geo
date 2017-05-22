@@ -11,7 +11,7 @@ import (
 	"unicode"
 )
 
-func remove_space(s string) string {
+func removeSpace(s string) string {
 	return strings.Map(func(r rune) rune {
 		if unicode.IsSpace(r) {
 			return -1
@@ -20,8 +20,8 @@ func remove_space(s string) string {
 	}, s)
 }
 
-func open_map_file(output_dir, filename string) *os.File {
-	filepath := path.Join(output_dir, filename)
+func openMapFile(outputDir, filename string) *os.File {
+	filepath := path.Join(outputDir, filename)
 	f, err := os.Create(filepath)
 	if err != nil {
 		color.Red("[FAIL]\nCan't open %s: %s", filepath, err.Error())
@@ -30,22 +30,22 @@ func open_map_file(output_dir, filename string) *os.File {
 	return f
 }
 
-func print_message(module, message, status string) {
-	var status_mesage string
+func printMessage(module, message, status string) {
+	var statusMesage string
 	switch status {
 	case "OK":
-		status_mesage = color.GreenString(status)
+		statusMesage = color.GreenString(status)
 	case "FAIL":
-		status_mesage = color.RedString(status)
+		statusMesage = color.RedString(status)
 	case "WARN":
-		status_mesage = color.YellowString(status)
+		statusMesage = color.YellowString(status)
 	default:
-		status_mesage = color.BlueString(status)
+		statusMesage = color.BlueString(status)
 	}
-	fmt.Printf("%-10s | %-30s[%s]\n", module, message, status_mesage)
+	fmt.Printf("%-10s | %-30s[%s]\n", module, message, statusMesage)
 }
 
-func get_ip_range(ipver int, network string) string {
+func getIPRange(ipver int, network string) string {
 	if ipver == 4 {
 		_, ipnet, err := net.ParseCIDR(network)
 		if err != nil {
@@ -61,7 +61,7 @@ func get_ip_range(ipver int, network string) string {
 	return network
 }
 
-func ip2int(ip net.IP) uint32 {
+func ip2Int(ip net.IP) uint32 {
 	if len(ip) == 16 {
 		return binary.BigEndian.Uint32(ip[12:16])
 	}
