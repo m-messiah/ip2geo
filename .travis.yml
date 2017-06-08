@@ -1,23 +1,15 @@
-branches:
-  only:
-  - master
-language: python
-python:
-- '2.7'
-- '3.3'
-- '3.4'
-- '3.5'
-cache: pip
-sudo: false
-install: pip install -q .
+language: go
 script:
-  - ipgeobase-importer tmp
-  - cat tmp/city.txt | grep 0JzQvtGB0LrQstCw > /dev/null
+- GOOS=linux  go build -o ip2geo
+- GOOS=darwin go build -o ip2geo-mac
 deploy:
-  provider: pypi
-  distributions: sdist bdist_wheel
-  user: m_messiah
+  provider: releases
+  api_key:
+    secure: pnQ8xc9vk/uyztwA/4XfnKsFe21UlqoasDqVegcsClHos4cln+/BJlYWhcKj/A0ZyYmVFORYsxk0xZqaJFQhpgxt7iTQONxhvDu7X5xK0wADDhs7K65zkbfD31SKWiG8IFm/Jqf2XAiq95kfH4bSCc+bK8W+hlUIAuBmIH1yxcnKj9JDVHQUppFDridU1UnSx0M1G7OkRC8t169QMPtjOIZI9Nsg74rYfULH823dPDPvnaIhxqkjPbKQopzFd9vSW95aMEA0dYMtwaiDoBa2uAvyt1kiuio/J2H8kLypIkic6Azvu9G5BhFzofVZ2COuISSS+RTx6xhB8N5D1p5um4VKId5ZLurleIAZSewS1BiPATdCPkOQGQ94gvDwf5SEw3d4LDg1gdm2VDxr+zoK5kicvsaDq/hefOmsRpTRA5StRt+iBy1cPeECuLmFwOeBVL2a0EtLkJ/4fcVOfpN5jnB2ZbJ27LctutGqk6xyXmXYghow2iApbCyAHl4O+dQZTK3diWF5QRcOqv06AwogBeSvRAlhwWDulJI7xm3zWXuFQheh8lLcdPLUziYOm+Lz4Hy4PWA4VvnDZRomxUDup84p/QElgwKVmO6Jw+ypbwa22NVlZyAg7LcgQyX+4M3zDjXYcctx4iLzQ8CPWFgVMuwMNF25s7bz4ULudivPF2g=
+  file:
+    - ip2geo
+    - ip2geo-mac
+  skip_cleanup: true
   on:
-    python: '3.5'
-  password:
-    secure: s1GAUkmtuAP4b2zWY9RVba8yiZ1XqTcEl656isN5I4vc6ctQO+BCmnM6xB+Ijs1yfJCIGrDYLPRXiAVWXpEtCSWTa2AkGwlYNdM6sgKEBnCO9zPKhDlhXK7I7wAbiD6TkyhYXfj77YpNQZTshFVuJle9rvOeaCKISPaRP3aJk7ZuvrjpTBwE8Jr5lFT3ZXcuSfIUkhsFkYfdn2483Zi+9A9ERlbUp06O8GLutWmyR0s3bmWJmOW9WUShOEj/kowZKBvNhZWXQ8q7YwiqBJI3SMVfiS5xywOnaZ9/hlgfniz99DGPXP+KiqmRjGRul2zH0jLfh1clmReSr8p0E3UtA4372tWKlrw5Il7mul+1f2kRSJkDbHNDA4JLgNddmkJMjeIRxfNZR6yXDY2nOuc0x4TR4/VmtLxt1TCzVEw1yo/ddDnwdMwVSj3BfvjBdwBTowggsPi+OEFQiCdi+JODCP28dDq9clyTQQyJg6dbqHOg3ksluaWsUsqPH9KSh4hkVV2c3gG4GaDeaO80vuon2/99thAaaLyGWHVBuEHelsKKyluzEdl5koCpSkg8upwmmnONpy6ODRGTFOCOQFUXqaLfJ3Ixr0WrUjpuWXuIu/NMEmTpWRgQpcX9bX4H9J1OnVoH6aNOkS6PP4T3os8o+66S5J8ULe5hWFAalUGwgS8=
+    repo: m-messiah/ip2geo
+    tags: true
