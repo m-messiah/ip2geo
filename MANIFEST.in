@@ -1,3 +1,0 @@
-include ip-maxmind
-include ipgeobase-importer
-include README.rst
