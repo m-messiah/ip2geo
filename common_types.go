@@ -22,3 +22,9 @@ func (d IPList) Len() int {
 func (d IPList) Swap(i, j int) {
 	d[i], d[j] = d[j], d[i]
 }
+
+type Error struct {
+	err    error
+	Module string
+	Action string
+}

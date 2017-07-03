@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"os"
-	"sync"
 )
 
 func main() {
@@ -25,21 +24,29 @@ func main() {
 	}
 	os.MkdirAll(*outputDir, 0755)
 	printMessage(" ", "Use output directory", *outputDir)
-	var wg sync.WaitGroup
+	goroutines_count := 0
+	error_channel := make(chan Error)
 	if *ipgeobase {
-		wg.Add(1)
-		go ipgeobaseGenerate(&wg, *outputDir)
+		goroutines_count++
+		go ipgeobaseGenerate(*outputDir, error_channel)
 	}
 
 	if *tor {
-		wg.Add(1)
-		go torGenerate(&wg, *outputDir)
+		goroutines_count++
+		go torGenerate(*outputDir, error_channel)
 	}
 
 	if *maxmind {
-		wg.Add(1)
-		go maxmindGenerate(&wg, *outputDir, *maxmindLang, *maxmindIPVer, *maxmindTZNames, *maxmindInclude, *maxmindExclude)
+		goroutines_count++
+		go maxmindGenerate(*outputDir, *maxmindLang, *maxmindIPVer, *maxmindTZNames, *maxmindInclude, *maxmindExclude, error_channel)
 	}
 
-	wg.Wait()
+	for i := 0; i < goroutines_count; i++ {
+		err := <-error_channel
+		if err.err != nil {
+			printMessage(err.Module, err.Action+": "+err.err.Error(), "FAIL")
+			os.Exit(1)
+		}
+	}
+	printMessage("ip2geo", "Generation done", "OK")
 }

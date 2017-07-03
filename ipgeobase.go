@@ -5,59 +5,74 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/csv"
+	"errors"
 	"fmt"
 	"golang.org/x/net/html/charset"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"sort"
-	"sync"
 )
 
-func ipgeobaseGenerate(wg *sync.WaitGroup, outputDir string) {
-	answer := ipgeobaseDownload()
-	if answer != nil {
+func ipgeobaseGenerate(outputDir string, errors_chan chan Error) {
+	answer, err := ipgeobaseDownload()
+	if err != nil {
+		errors_chan <- Error{err, "IPGeobase", "Download"}
+		return
+	} else {
 		printMessage("IPGeobase", "Download", "OK")
 	}
-	archive := ipgeobaseUnpack(answer)
-	if archive != nil {
+	archive, err := ipgeobaseUnpack(answer)
+	if err != nil {
+		errors_chan <- Error{err, "IPGeobase", "Unpack"}
+		return
+	} else {
 		printMessage("IPGeobase", "Unpack", "OK")
 	}
-	cities := ipgeobaseCities(archive)
-	if len(cities) > 0 {
+	cities, err := ipgeobaseCities(archive)
+	if err != nil {
+		errors_chan <- Error{err, "IPGeobase", "Generate Cities"}
+		return
+	} else {
 		printMessage("IPGeobase", "Generate cities", "OK")
 	}
-	database := ipgeobaseCidr(archive, cities)
-	if len(database) > 0 {
+	database, err := ipgeobaseCidr(archive, cities)
+	if err != nil {
+		errors_chan <- Error{err, "IPGeobase", "Generate db"}
+		return
+	} else {
 		printMessage("IPGeobase", "Generate database", "OK")
 	}
-	ipgeobaseWriteMap(outputDir, database)
-	printMessage("IPGeobase", "Write nginx maps", "OK")
-	defer wg.Done()
+	if err := ipgeobaseWriteMap(outputDir, database); err != nil {
+		errors_chan <- Error{err, "IPGeobase", "Write map"}
+		return
+	} else {
+		printMessage("IPGeobase", "Write nginx maps", "OK")
+	}
+	errors_chan <- Error{err: nil}
 }
 
-func ipgeobaseDownload() []byte {
+func ipgeobaseDownload() ([]byte, error) {
 	resp, err := http.Get("http://ipgeobase.ru/files/db/Main/geo_files.zip")
 	if err != nil {
 		printMessage("IPGeobase", "Download no answer", "FAIL")
-		return nil
+		return nil, err
 	}
 	defer resp.Body.Close()
 	answer, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		printMessage("IPGeobase", "Download bad answer", "FAIL")
-		return nil
+		return nil, err
 	}
-	return answer
+	return answer, nil
 }
 
-func ipgeobaseUnpack(response []byte) []*zip.File {
+func ipgeobaseUnpack(response []byte) ([]*zip.File, error) {
 	zipReader, err := zip.NewReader(bytes.NewReader(response), int64(len(response)))
 	if err != nil {
-		printMessage("IPGeobase", "Bad zip file", "FAIL")
-		return nil
+		return nil, err
 	}
-	return zipReader.File
+	return zipReader.File, nil
 }
 
 func readIgCSV(archive []*zip.File, filename string) chan []string {
@@ -97,7 +112,7 @@ func readIgCSV(archive []*zip.File, filename string) chan []string {
 	return yield
 }
 
-func ipgeobaseCities(archive []*zip.File) map[string]City {
+func ipgeobaseCities(archive []*zip.File) (map[string]City, error) {
 	cities := make(map[string]City)
 	for record := range readIgCSV(archive, "cities.txt") {
 		if len(record) < 3 {
@@ -118,12 +133,12 @@ func ipgeobaseCities(archive []*zip.File) map[string]City {
 		}
 	}
 	if len(cities) < 1 {
-		printMessage("IPGeobase", "Cities db is empty", "FAIL")
+		return nil, errors.New("Cities db is empty")
 	}
-	return cities
+	return cities, nil
 }
 
-func ipgeobaseCidr(archive []*zip.File, cities map[string]City) map[string]City {
+func ipgeobaseCidr(archive []*zip.File, cities map[string]City) (map[string]City, error) {
 	database := make(map[string]City)
 	for record := range readIgCSV(archive, "cidr_optim.txt") {
 		if len(record) < 5 {
@@ -137,15 +152,24 @@ func ipgeobaseCidr(archive []*zip.File, cities map[string]City) map[string]City 
 		}
 	}
 	if len(database) < 1 {
-		printMessage("IPGeobase", "Database is empty", "FAIL")
+		return nil, errors.New("Database is empty")
 	}
-	return database
+	return database, nil
 }
 
-func ipgeobaseWriteMap(outputDir string, database map[string]City) {
-	reg := openMapFile(outputDir, "region.txt")
-	city := openMapFile(outputDir, "city.txt")
-	tz := openMapFile(outputDir, "tz.txt")
+func ipgeobaseWriteMap(outputDir string, database map[string]City) error {
+	reg, err := openMapFile(outputDir, "region.txt")
+	if err != nil {
+		return err
+	}
+	city, err := openMapFile(outputDir, "city.txt")
+	if err != nil {
+		return err
+	}
+	tz, err := openMapFile(outputDir, "tz.txt")
+	if err != nil {
+		return err
+	}
 	defer reg.Close()
 	defer city.Close()
 	defer tz.Close()
@@ -162,5 +186,5 @@ func ipgeobaseWriteMap(outputDir string, database map[string]City) {
 		fmt.Fprintf(reg, "%s %02d;\n", ipRange, info.RegID)
 		fmt.Fprintf(tz, "%s %s;\n", ipRange, info.TZ)
 	}
-
+	return nil
 }

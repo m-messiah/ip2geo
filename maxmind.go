@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/csv"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -13,54 +14,66 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 )
 
-func maxmindGenerate(wg *sync.WaitGroup, outputDir, lang string, ipver int, tzNames bool, include, exclude string) {
-	answer := maxmindDownload()
-	if answer != nil {
+func maxmindGenerate(outputDir, lang string, ipver int, tzNames bool, include, exclude string, errors_chan chan Error) {
+	answer, err := maxmindDownload()
+	if err != nil {
+		errors_chan <- Error{err, "MaxMind", "Download"}
+		return
+	} else {
 		printMessage("MaxMind", "Download", "OK")
 	}
-	archive := maxmindUnpack(answer)
-	if archive != nil {
+	archive, err := maxmindUnpack(answer)
+	if err != nil {
+		errors_chan <- Error{err, "MaxMind", "Unpack"}
+		return
+	} else {
 		printMessage("MaxMind", "Unpack", "OK")
 	}
-	cities := maxmindCities(archive, lang, tzNames, include, exclude)
-	if len(cities) > 0 {
+	cities, err := maxmindCities(archive, lang, tzNames, include, exclude)
+	if err != nil {
+		errors_chan <- Error{err, "MaxMind", "Generate Cities"}
+		return
+	} else {
 		printMessage("MaxMind", "Generate cities", "OK")
 	}
-	database := maxmindNetwork(archive, ipver, cities)
-	if len(database) > 0 {
-		printMessage("MaxMind", "Generate database", "OK")
+	database, err := maxmindNetwork(archive, ipver, cities)
+	if err != nil {
+		errors_chan <- Error{err, "MaxMind", "Generate db"}
+		return
+	} else {
+		printMessage("MaxMind", "Generate db", "OK")
 	}
-	maxmindWriteMap(outputDir, database)
-	printMessage("MaxMind", "Write nginx maps", "OK")
-	defer wg.Done()
+	if err := maxmindWriteMap(outputDir, database); err != nil {
+		errors_chan <- Error{err, "MaxMind", "Write nginx maps"}
+		return
+	} else {
+		printMessage("MaxMind", "Write nginx maps", "OK")
+	}
+	errors_chan <- Error{err: nil}
 }
 
-func maxmindDownload() []byte {
+func maxmindDownload() ([]byte, error) {
 	resp, err := http.Get("http://geolite.maxmind.com/download/geoip/database/GeoLite2-City-CSV.zip")
 	if err != nil {
-		printMessage("MaxMind", "Download no answer", "FAIL")
-		return nil
+		return nil, err
 	}
 	defer resp.Body.Close()
 	answer, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		printMessage("MaxMind", "Download bad answer", "FAIL")
-		return nil
+		return nil, err
 	}
-	return answer
+	return answer, nil
 }
 
-func maxmindUnpack(response []byte) []*zip.File {
+func maxmindUnpack(response []byte) ([]*zip.File, error) {
 	zipReader, err := zip.NewReader(bytes.NewReader(response), int64(len(response)))
 	if err != nil {
-		printMessage("MaxMind", "Bad zip file", "FAIL")
-		return nil
+		return nil, err
 	}
-	return zipReader.File
+	return zipReader.File, nil
 }
 
 func readMaxMindCSV(archive []*zip.File, filename string) chan []string {
@@ -95,7 +108,7 @@ func readMaxMindCSV(archive []*zip.File, filename string) chan []string {
 	return yield
 }
 
-func maxmindCities(archive []*zip.File, language string, tznames bool, include, exclude string) map[string]Location {
+func maxmindCities(archive []*zip.File, language string, tznames bool, include, exclude string) (map[string]Location, error) {
 	locations := make(map[string]Location)
 	currentTime := time.Now()
 	for record := range readMaxMindCSV(archive, "GeoLite2-City-Locations-"+language+".csv") {
@@ -122,12 +135,12 @@ func maxmindCities(archive []*zip.File, language string, tznames bool, include, 
 		}
 	}
 	if len(locations) < 1 {
-		printMessage("MaxMind", "Locations db is empty", "FAIL")
+		return nil, errors.New("Locations db is empty")
 	}
-	return locations
+	return locations, nil
 }
 
-func maxmindNetwork(archive []*zip.File, ipver int, locations map[string]Location) Database {
+func maxmindNetwork(archive []*zip.File, ipver int, locations map[string]Location) (Database, error) {
 	var database Database
 	for record := range readMaxMindCSV(archive, "GeoLite2-City-Blocks-IPv"+strconv.Itoa(ipver)+".csv") {
 		if len(record) < 2 {
@@ -151,10 +164,10 @@ func maxmindNetwork(archive []*zip.File, ipver int, locations map[string]Locatio
 		}
 	}
 	if len(database) < 1 {
-		printMessage("MaxMind", "Network db is empty", "FAIL")
+		return nil, errors.New("Network db is empty")
 	}
 	sort.Sort(database)
-	return database
+	return database, nil
 }
 
 func convertTZToOffset(t time.Time, tz string) string {
@@ -166,13 +179,20 @@ func convertTZToOffset(t time.Time, tz string) string {
 	return fmt.Sprintf("UTC%+d", offset/3600)
 }
 
-func maxmindWriteMap(outputDir string, database Database) {
-	city := openMapFile(outputDir, "mm_city.txt")
-	tz := openMapFile(outputDir, "mm_tz.txt")
+func maxmindWriteMap(outputDir string, database Database) error {
+	city, err := openMapFile(outputDir, "mm_city.txt")
+	if err != nil {
+		return err
+	}
+	tz, err := openMapFile(outputDir, "mm_tz.txt")
+	if err != nil {
+		return err
+	}
 	defer city.Close()
 	defer tz.Close()
 	for _, location := range database {
 		fmt.Fprintf(city, "%s %s;\n", location.Network, base64.StdEncoding.EncodeToString([]byte(location.City)))
 		fmt.Fprintf(tz, "%s %s;\n", location.Network, location.TZ)
 	}
+	return nil
 }

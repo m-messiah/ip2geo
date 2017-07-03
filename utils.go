@@ -20,14 +20,9 @@ func removeSpace(s string) string {
 	}, s)
 }
 
-func openMapFile(outputDir, filename string) *os.File {
+func openMapFile(outputDir, filename string) (*os.File, error) {
 	filepath := path.Join(outputDir, filename)
-	f, err := os.Create(filepath)
-	if err != nil {
-		color.Red("[FAIL]\nCan't open %s: %s", filepath, err.Error())
-		return nil
-	}
-	return f
+	return os.Create(filepath)
 }
 
 func printMessage(module, message, status string) {
@@ -42,7 +37,7 @@ func printMessage(module, message, status string) {
 	default:
 		statusMesage = color.BlueString(status)
 	}
-	fmt.Printf("%-10s | %-30s[%s]\n", module, message, statusMesage)
+	fmt.Printf("%-10s | %-60s [%s]\n", module, message, statusMesage)
 }
 
 func getIPRange(ipver int, network string) string {
