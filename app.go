@@ -5,6 +5,8 @@ import (
 	"os"
 )
 
+var LogLevel int = 0
+
 func main() {
 	outputDir := flag.String("output", "output", "output directory for files")
 	ipgeobase := flag.Bool("ipgeobase", false, "enable ipgeobase generation")
@@ -15,6 +17,8 @@ func main() {
 	maxmindTZNames := flag.Bool("tznames", false, "MaxMind TZ in names format (for example `Europe/Moscow`)")
 	maxmindInclude := flag.String("include", "", "MaxMind output filter: only these countries")
 	maxmindExclude := flag.String("exclude", "", "MaxMind output filter: except these countries")
+	quiet := flag.Bool("q", false, "Be quiet - skip [OK]")
+	very_quiet := flag.Bool("qq", false, "Be very quiet - show only errors")
 	flag.Parse()
 	if !(*ipgeobase || *tor || *maxmind) {
 		// By default, generate all maps
@@ -22,8 +26,16 @@ func main() {
 		*tor = true
 		*maxmind = true
 	}
+	if *quiet {
+		LogLevel = 1
+	}
+	if *very_quiet {
+		LogLevel = 2
+	}
 	os.MkdirAll(*outputDir, 0755)
-	printMessage(" ", "Use output directory", *outputDir)
+	if LogLevel < 2 {
+		printMessage(" ", "Use output directory", *outputDir)
+	}
 	goroutines_count := 0
 	error_channel := make(chan Error)
 	if *ipgeobase {
@@ -48,5 +60,7 @@ func main() {
 			os.Exit(1)
 		}
 	}
-	printMessage("ip2geo", "Generation done", "OK")
+	if LogLevel < 1 {
+		printMessage(" ", "Generation done", "OK")
+	}
 }

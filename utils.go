@@ -29,12 +29,21 @@ func printMessage(module, message, status string) {
 	var statusMesage string
 	switch status {
 	case "OK":
+		if LogLevel > 0 {
+			return
+		}
 		statusMesage = color.GreenString(status)
+	case "WARN":
+		if LogLevel > 1 {
+			return
+		}
+		statusMesage = color.YellowString(status)
 	case "FAIL":
 		statusMesage = color.RedString(status)
-	case "WARN":
-		statusMesage = color.YellowString(status)
 	default:
+		if LogLevel > 1 {
+			return
+		}
 		statusMesage = color.BlueString(status)
 	}
 	fmt.Printf("%-10s | %-60s [%s]\n", module, message, statusMesage)

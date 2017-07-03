@@ -22,6 +22,8 @@
 
     -output string
         Директория для записи map-файлов (по умолчанию: "output")
+    -q  Be quiet - skip [OK]
+    -qq Be very quiet - show only errors
     -ipgeobase
         Генерация IPgeobase баз (название города, код региона, часовой пояс)
     -tor
