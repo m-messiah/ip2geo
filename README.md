@@ -54,7 +54,12 @@ geo $region {
 
 geo $city {
     ranges;
+    default $city_mm;
     include geo/city.txt;
+}
+
+geo $city_mm {
+    ranges;
     include geo/mm_city.txt;
 }
 
@@ -66,12 +71,17 @@ geo $is_tor {
 
 geo $tz {
     ranges;
-    default "UTC+3";
+    default $tz_mm;
     include geo/tz.txt;
+}
+
+geo $tz_mm {
+    ranges;
+    default "UTC+3";
     include geo/mm_tz.txt;
 }
 ```
 
-Таким образом, IP адреса в файлах записаны в виде диапазона (range) и отсортированы по возрастанию IP.
+Таким образом, IP адреса в файлах записаны в виде диапазона (range) и отсортированы по возрастанию IP. Карты сделаны каскадно, чтобы решить проблему пересечений диапазонов. IPGeobase используется в первую очередь, и если адрес там не найден, то MaxMind.
 
 Для того, чтобы название города всегда отдавалось корректно - оно кодируется в base64 от utf8.

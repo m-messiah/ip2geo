@@ -1,7 +1,19 @@
 language: go
+addons:
+  apt:
+    packages:
+      - nginx
+      - tzdata
+      - cpanminus
+before_install:
+  - cpanm --local-lib=~/perl5 --quiet local::lib
+  - eval $(perl -I ~/perl5/lib/perl5/ -Mlocal::lib)
+  - cpanm --local-lib=~/perl5 --quiet --notest Test::Nginx::Socket
 script:
 - GOOS=linux  go build -o ip2geo
 - GOOS=darwin go build -o ip2geo-mac
+- ./ip2geo
+- TEST_NGINX_IP2GEO_DIR=$PWD prove
 deploy:
   provider: releases
   api_key:
