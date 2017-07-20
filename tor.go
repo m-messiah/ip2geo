@@ -92,13 +92,19 @@ func torTorProjectDownload(ch chan map[string]bool) {
 }
 
 func torMerge(ch chan map[string]bool) IPList {
-	a := <-ch
-	for k, v := range <-ch {
-		a[k] = v
+	result := make(map[string]bool)
+	for i := 0; i < 2; i++ {
+		m := <-ch
+		if m == nil {
+			continue
+		}
+		for k, v := range m {
+			result[k] = v
+		}
 	}
-	ipList := make(IPList, len(a))
+	ipList := make(IPList, len(result))
 	i := 0
-	for ip := range a {
+	for ip := range result {
 		ipList[i] = ip
 		i++
 	}
