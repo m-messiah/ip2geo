@@ -42,44 +42,52 @@
         MaxMind фильтр: исключает из вывода перечисленные страны. (см формат выше)
     
 
-### Формат map-файлов
+### Формат geomap-файлов
 
-map-файлы предназначены для использования в nginx в виде:
+geomap-файлы предназначены для использования в nginx в виде:
 
 ```nginx
-geo $region {
-    ranges;
-    include geo/region.txt;
-}
+# Region
+    geo $region {
+        ranges;
+        include geo/region.txt;
+    }
+# City
+    geo $city_geo {
+        ranges;
+        include geo/city.txt;
+    }
 
-geo $city {
-    ranges;
-    default $city_mm;
-    include geo/city.txt;
-}
+    geo $city_mm {
+        ranges;
+        include geo/mm_city.txt;
+    }
 
-geo $city_mm {
-    ranges;
-    include geo/mm_city.txt;
-}
+    map $city_geo $city {
+        "" $city_mm;
+        default $city_geo;
+    }
+# TZ
+    geo $tz_geo {
+        ranges;
+        include geo/tz.txt;
+    }
 
-geo $is_tor {
-    ranges;
-    default 0;
-    include geo/tor.txt;
-}
+    geo $tz_mm {
+        ranges;
+        include geo/mm_tz.txt;
+    }
 
-geo $tz {
-    ranges;
-    default $tz_mm;
-    include geo/tz.txt;
-}
-
-geo $tz_mm {
-    ranges;
-    default "UTC+3";
-    include geo/mm_tz.txt;
-}
+    map $tz_geo $tz {
+        "" $tz_mm;
+        default $tz_geo;
+    }
+# Tor
+    geo $is_tor {
+        ranges;
+        default 0;
+        include geo/tor.txt;
+    }
 ```
 
 Таким образом, IP адреса в файлах записаны в виде диапазона (range) и отсортированы по возрастанию IP. Карты сделаны каскадно, чтобы решить проблему пересечений диапазонов. IPGeobase используется в первую очередь, и если адрес там не найден, то MaxMind.
