@@ -7,49 +7,45 @@ import (
 	"encoding/csv"
 	"errors"
 	"fmt"
-	"golang.org/x/net/html/charset"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"sort"
+
+	"golang.org/x/net/html/charset"
 )
 
-func ipgeobaseGenerate(outputDir string, errors_chan chan Error) {
+func ipgeobaseGenerate(outputDir string, errorsChan chan Error) {
 	answer, err := ipgeobaseDownload()
 	if err != nil {
-		errors_chan <- Error{err, "IPGeobase", "Download"}
+		errorsChan <- Error{err, "IPGeobase", "Download"}
 		return
-	} else {
-		printMessage("IPGeobase", "Download", "OK")
 	}
+	printMessage("IPGeobase", "Download", "OK")
 	archive, err := ipgeobaseUnpack(answer)
 	if err != nil {
-		errors_chan <- Error{err, "IPGeobase", "Unpack"}
+		errorsChan <- Error{err, "IPGeobase", "Unpack"}
 		return
-	} else {
-		printMessage("IPGeobase", "Unpack", "OK")
 	}
+	printMessage("IPGeobase", "Unpack", "OK")
 	cities, err := ipgeobaseCities(archive)
 	if err != nil {
-		errors_chan <- Error{err, "IPGeobase", "Generate Cities"}
+		errorsChan <- Error{err, "IPGeobase", "Generate Cities"}
 		return
-	} else {
-		printMessage("IPGeobase", "Generate cities", "OK")
 	}
+	printMessage("IPGeobase", "Generate cities", "OK")
 	database, err := ipgeobaseCidr(archive, cities)
 	if err != nil {
-		errors_chan <- Error{err, "IPGeobase", "Generate db"}
+		errorsChan <- Error{err, "IPGeobase", "Generate db"}
 		return
-	} else {
-		printMessage("IPGeobase", "Generate database", "OK")
 	}
+	printMessage("IPGeobase", "Generate database", "OK")
 	if err := ipgeobaseWriteMap(outputDir, database); err != nil {
-		errors_chan <- Error{err, "IPGeobase", "Write map"}
+		errorsChan <- Error{err, "IPGeobase", "Write map"}
 		return
-	} else {
-		printMessage("IPGeobase", "Write nginx maps", "OK")
 	}
-	errors_chan <- Error{err: nil}
+	printMessage("IPGeobase", "Write nginx maps", "OK")
+	errorsChan <- Error{err: nil}
 }
 
 func ipgeobaseDownload() ([]byte, error) {

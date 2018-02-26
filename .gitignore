@@ -1,3 +1,6 @@
 ip2geo
 ip2geo-mac
 output
+*.exe
+.vscode
+output/

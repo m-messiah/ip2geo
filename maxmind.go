@@ -22,36 +22,31 @@ func maxmindGenerate(outputDir, lang string, ipver int, tzNames bool, include, e
 	if err != nil {
 		errors_chan <- Error{err, "MaxMind", "Download"}
 		return
-	} else {
-		printMessage("MaxMind", "Download", "OK")
 	}
+	printMessage("MaxMind", "Download", "OK")
 	archive, err := maxmindUnpack(answer)
 	if err != nil {
 		errors_chan <- Error{err, "MaxMind", "Unpack"}
 		return
-	} else {
-		printMessage("MaxMind", "Unpack", "OK")
 	}
+	printMessage("MaxMind", "Unpack", "OK")
 	cities, err := maxmindCities(archive, lang, tzNames, include, exclude)
 	if err != nil {
 		errors_chan <- Error{err, "MaxMind", "Generate Cities"}
 		return
-	} else {
-		printMessage("MaxMind", "Generate cities", "OK")
 	}
+	printMessage("MaxMind", "Generate cities", "OK")
 	database, err := maxmindNetwork(archive, ipver, cities)
 	if err != nil {
 		errors_chan <- Error{err, "MaxMind", "Generate db"}
 		return
-	} else {
-		printMessage("MaxMind", "Generate db", "OK")
 	}
+	printMessage("MaxMind", "Generate db", "OK")
 	if err := maxmindWriteMap(outputDir, database); err != nil {
 		errors_chan <- Error{err, "MaxMind", "Write nginx maps"}
 		return
-	} else {
-		printMessage("MaxMind", "Write nginx maps", "OK")
 	}
+	printMessage("MaxMind", "Write nginx maps", "OK")
 	errors_chan <- Error{err: nil}
 }
 
