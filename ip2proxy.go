@@ -161,31 +161,11 @@ func (o *ip2proxy) writeNetworks() error {
 	}
 	defer file.Close()
 	for _, item := range o.items {
-		fmt.Fprintf(file, "%s-%s 1;\n", item.IPFrom, item.IPTo)
-	}
-	return nil
-}
-
-func (o *ip2proxy) writeCities() error {
-	file, err := os.Create(path.Join(o.OutputDir, "ip2proxy_city.txt"))
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-	for _, item := range o.items {
-		fmt.Fprintf(file, "%s-%s %s;\n", item.IPFrom, item.IPTo, item.City)
-	}
-	return nil
-}
-
-func (o *ip2proxy) criteCompanies() error {
-	file, err := os.Create(path.Join(o.OutputDir, "ip2proxy_company.txt"))
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-	for _, item := range o.items {
-		fmt.Fprintf(file, "%s-%s %s;\n", item.IPFrom, item.IPTo, item.Company)
+		if item.IPFrom.String() != item.IPTo.String() {
+			fmt.Fprintf(file, "%s-%s 1;\n", item.IPFrom, item.IPTo)
+		} else {
+			fmt.Fprintf(file, "%s 1;\n", item.IPFrom)
+		}
 	}
 	return nil
 }

@@ -17,37 +17,37 @@ import (
 	"time"
 )
 
-func maxmindGenerate(outputDir, lang string, ipver int, tzNames bool, include, exclude string, errors_chan chan Error) {
+func maxmindGenerate(outputDir, lang string, ipver int, tzNames bool, include, exclude string, errorsChan chan Error) {
 	answer, err := maxmindDownload()
 	if err != nil {
-		errors_chan <- Error{err, "MaxMind", "Download"}
+		errorsChan <- Error{err, "MaxMind", "Download"}
 		return
 	}
 	printMessage("MaxMind", "Download", "OK")
 	archive, err := maxmindUnpack(answer)
 	if err != nil {
-		errors_chan <- Error{err, "MaxMind", "Unpack"}
+		errorsChan <- Error{err, "MaxMind", "Unpack"}
 		return
 	}
 	printMessage("MaxMind", "Unpack", "OK")
 	cities, err := maxmindCities(archive, lang, tzNames, include, exclude)
 	if err != nil {
-		errors_chan <- Error{err, "MaxMind", "Generate Cities"}
+		errorsChan <- Error{err, "MaxMind", "Generate Cities"}
 		return
 	}
 	printMessage("MaxMind", "Generate cities", "OK")
 	database, err := maxmindNetwork(archive, ipver, cities)
 	if err != nil {
-		errors_chan <- Error{err, "MaxMind", "Generate db"}
+		errorsChan <- Error{err, "MaxMind", "Generate db"}
 		return
 	}
 	printMessage("MaxMind", "Generate db", "OK")
 	if err := maxmindWriteMap(outputDir, database); err != nil {
-		errors_chan <- Error{err, "MaxMind", "Write nginx maps"}
+		errorsChan <- Error{err, "MaxMind", "Write nginx maps"}
 		return
 	}
 	printMessage("MaxMind", "Write nginx maps", "OK")
-	errors_chan <- Error{err: nil}
+	errorsChan <- Error{err: nil}
 }
 
 func maxmindDownload() ([]byte, error) {
