@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-func torGenerate(outputDir string, errors_chan chan Error) {
+func torGenerate(outputDir string, errorsChan chan Error) {
 	torLists := make(chan map[string]bool, 2)
 	go torBlutmagieDownload(torLists)
 	go torTorProjectDownload(torLists)
@@ -18,16 +18,15 @@ func torGenerate(outputDir string, errors_chan chan Error) {
 	if torlist != nil && len(torlist) > 0 {
 		printMessage("TOR", "Merge", "OK")
 	} else {
-		errors_chan <- Error{errors.New("torlist empty"), "TOR", "Merge"}
+		errorsChan <- Error{errors.New("torlist empty"), "TOR", "Merge"}
 		return
 	}
 	if err := torWriteMap(outputDir, torlist); err != nil {
-		errors_chan <- Error{err, "TOR", "nginx"}
+		errorsChan <- Error{err, "TOR", "nginx"}
 		return
-	} else {
-		printMessage("TOR", "Write nginx maps", "OK")
 	}
-	errors_chan <- Error{err: nil}
+	printMessage("TOR", "Write nginx maps", "OK")
+	errorsChan <- Error{err: nil}
 }
 
 func torBlutmagieDownload(ch chan map[string]bool) {
