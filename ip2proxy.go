@@ -161,11 +161,7 @@ func (o *ip2proxy) writeNetworks() error {
 	}
 	defer file.Close()
 	for _, item := range o.items {
-		if item.IPFrom.String() != item.IPTo.String() {
-			fmt.Fprintf(file, "%s-%s 1;\n", item.IPFrom, item.IPTo)
-		} else {
-			fmt.Fprintf(file, "%s 1;\n", item.IPFrom)
-		}
+		fmt.Fprintf(file, "%s-%s 1;\n", item.IPFrom, item.IPTo)
 	}
 	return nil
 }
