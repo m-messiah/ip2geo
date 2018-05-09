@@ -4,10 +4,8 @@ import (
 	"archive/zip"
 	"bytes"
 	"encoding/base64"
-	"encoding/csv"
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -72,35 +70,7 @@ func maxmindUnpack(response []byte) ([]*zip.File, error) {
 }
 
 func readMaxMindCSV(archive []*zip.File, filename string) chan []string {
-	yield := make(chan []string)
-	go func() {
-		for _, file := range archive {
-			if strings.Contains(file.Name, filename) {
-				fp, err := file.Open()
-				if err != nil {
-					printMessage("MaxMind", fmt.Sprintf("Can't open %s", filename), "FAIL")
-					yield <- nil
-				}
-				defer fp.Close()
-				r := csv.NewReader(fp)
-				r.LazyQuotes = true
-				for {
-					record, err := r.Read()
-					// Stop at EOF.
-					if err == io.EOF {
-						break
-					}
-					if err != nil {
-						printMessage("MaxMind", fmt.Sprintf("Can't read line from %s", filename), "WARN")
-						continue
-					}
-					yield <- record
-				}
-			}
-		}
-		close(yield)
-	}()
-	return yield
+	return readCSVDatabase(archive, filename, "MaxMind", ',', false)
 }
 
 func maxmindCities(archive []*zip.File, language string, tznames bool, include, exclude string) (map[string]Location, error) {
