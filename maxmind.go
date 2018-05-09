@@ -70,32 +70,44 @@ func (maxmind *MaxMind) Unpack(response []byte) error {
 	return nil
 }
 
+func (maxmind *MaxMind) lineToItem(record []string, currentTime time.Time) (*string, *Location, error, string) {
+	if len(record) < 13 {
+		return nil, nil, errors.New("too short line"), "FAIL"
+	}
+	country := record[4]
+	if len(record[10]) < 1 || len(country) < 1 {
+		return nil, nil, errors.New("too short country"), ""
+	}
+	if len(maxmind.include) > 1 && !strings.Contains(maxmind.include, country) {
+		return nil, nil, errors.New("country skipped"), ""
+	}
+	if strings.Contains(maxmind.exclude, country) {
+		return nil, nil, errors.New("country excluded"), ""
+	}
+	tz := record[12]
+	if !maxmind.tzNames {
+		tz = convertTZToOffset(currentTime, record[12])
+	}
+	return &record[0], &Location{
+		ID:   record[0],
+		City: record[10],
+		TZ:   tz,
+	}, nil, ""
+}
+
 func (maxmind *MaxMind) GenerateCities() (map[string]Location, error) {
 	locations := make(map[string]Location)
 	currentTime := time.Now()
 	filename := "GeoLite2-City-Locations-" + maxmind.lang + ".csv"
 	for record := range readCSVDatabase(maxmind.archive, filename, "MaxMind", ',', false) {
-		if len(record) < 13 {
-			printMessage("MaxMind", fmt.Sprintf(filename+" too short line: %s", record), "FAIL")
-			continue
-		}
-		country := record[4]
-		if len(record[10]) < 1 || len(country) < 1 {
-			continue
-		}
-		if len(maxmind.include) < 1 || strings.Contains(maxmind.include, country) {
-			if !strings.Contains(maxmind.exclude, country) {
-				tz := record[12]
-				if !maxmind.tzNames {
-					tz = convertTZToOffset(currentTime, record[12])
-				}
-				locations[record[0]] = Location{
-					ID:   record[0],
-					City: record[10],
-					TZ:   tz,
-				}
+		key, location, err, severity := maxmind.lineToItem(record, currentTime)
+		if err != nil {
+			if len(severity) > 0 {
+				printMessage("MaxMind", fmt.Sprintf(filename+" %v", err), severity)
 			}
+			continue
 		}
+		locations[*key] = *location
 	}
 	if len(locations) < 1 {
 		return nil, errors.New("Locations db is empty")
