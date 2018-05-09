@@ -52,7 +52,11 @@ func main() {
 
 	if *tor {
 		goroutinesCount++
-		go torGenerate(*outputDir, errorChannel)
+		t := Tor{
+			OutputDir:  *outputDir,
+			ErrorsChan: errorChannel,
+		}
+		go t.Generate()
 	}
 
 	if *maxmind {
