@@ -137,7 +137,7 @@ func readCSVDatabase(archive []*zip.File, filename string, dbType string, comma 
 		if windows_encoding {
 			utf8, err := charset.NewReader(fp, "text/csv; charset=windows-1251")
 			if err != nil {
-				printMessage("IPGeobase", fmt.Sprintf("%s not in cp1251", filename), "FAIL")
+				printMessage(dbType, fmt.Sprintf("%s not in cp1251", filename), "FAIL")
 				yield <- nil
 			}
 			r = csv.NewReader(utf8)
