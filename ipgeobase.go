@@ -2,7 +2,6 @@ package main
 
 import (
 	"archive/zip"
-	"bytes"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -11,37 +10,19 @@ import (
 	"sort"
 )
 
-func (ipgeobase *IPGeobase) Generate() {
-	answer, err := ipgeobase.Download()
-	if err != nil {
-		ipgeobase.ErrorsChan <- Error{err, "IPGeobase", "Download"}
-		return
-	}
-	printMessage("IPGeobase", "Download", "OK")
-	err = ipgeobase.Unpack(answer)
-	if err != nil {
-		ipgeobase.ErrorsChan <- Error{err, "IPGeobase", "Unpack"}
-		return
-	}
-	printMessage("IPGeobase", "Unpack", "OK")
-	cities, err := ipgeobase.Cities()
-	if err != nil {
-		ipgeobase.ErrorsChan <- Error{err, "IPGeobase", "Generate Cities"}
-		return
-	}
-	printMessage("IPGeobase", "Generate cities", "OK")
-	err = ipgeobase.Cidr(cities)
-	if err != nil {
-		ipgeobase.ErrorsChan <- Error{err, "IPGeobase", "Generate db"}
-		return
-	}
-	printMessage("IPGeobase", "Generate database", "OK")
-	if err := ipgeobase.WriteMap(); err != nil {
-		ipgeobase.ErrorsChan <- Error{err, "IPGeobase", "Write map"}
-		return
-	}
-	printMessage("IPGeobase", "Write nginx maps", "OK")
-	ipgeobase.ErrorsChan <- Error{err: nil}
+type IPGeobase struct {
+	OutputDir  string
+	ErrorsChan chan Error
+	database   map[string]GeoItem
+	archive    []*zip.File
+}
+
+func (ipgeobase *IPGeobase) Name() string {
+	return "IPGeobase"
+}
+
+func (ipgeobase *IPGeobase) AddError(err Error) {
+	ipgeobase.ErrorsChan <- err
 }
 
 func (ipgeobase *IPGeobase) Download() ([]byte, error) {
@@ -60,16 +41,15 @@ func (ipgeobase *IPGeobase) Download() ([]byte, error) {
 }
 
 func (ipgeobase *IPGeobase) Unpack(response []byte) error {
-	zipReader, err := zip.NewReader(bytes.NewReader(response), int64(len(response)))
-	if err != nil {
-		return err
+	file, err := Unpack(response)
+	if err == nil {
+		ipgeobase.archive = file
 	}
-	ipgeobase.archive = zipReader.File
-	return nil
+	return err
 }
 
-func (ipgeobase *IPGeobase) Cities() (map[string]City, error) {
-	cities := make(map[string]City)
+func (ipgeobase *IPGeobase) Cities() (map[string]GeoItem, error) {
+	cities := make(map[string]GeoItem)
 	for record := range readCSVDatabase(ipgeobase.archive, "cities.txt", "IPGeobase", '\t', true) {
 		if len(record) < 3 {
 			printMessage("IPGeobase", fmt.Sprintf("cities.txt too short line: %s", record), "FAIL")
@@ -81,7 +61,7 @@ func (ipgeobase *IPGeobase) Cities() (map[string]City, error) {
 			if cid == "1199" {
 				region, _ = REGIONS["Москва"]
 			}
-			cities[cid] = City{
+			cities[cid] = GeoItem{
 				Name:  city,
 				RegID: region.ID,
 				TZ:    region.TZ,
@@ -94,8 +74,8 @@ func (ipgeobase *IPGeobase) Cities() (map[string]City, error) {
 	return cities, nil
 }
 
-func (ipgeobase *IPGeobase) Cidr(cities map[string]City) error {
-	database := make(map[string]City)
+func (ipgeobase *IPGeobase) Network(cities map[string]GeoItem) error {
+	database := make(map[string]GeoItem)
 	for record := range readCSVDatabase(ipgeobase.archive, "cidr_optim.txt", "IPGeobase", '\t', true) {
 		if len(record) < 5 {
 			printMessage("IPGeobase", fmt.Sprintf("cidr_optim.txt too short line: %s", record), "FAIL")
