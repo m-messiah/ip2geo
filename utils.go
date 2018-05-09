@@ -2,6 +2,7 @@ package main
 
 import (
 	"archive/zip"
+	"bytes"
 	"encoding/binary"
 	"encoding/csv"
 	"errors"
@@ -122,6 +123,7 @@ func ip2int(ipnr net.IP) int64 {
 func readCSVDatabase(archive []*zip.File, filename string, dbType string, comma rune, windows_encoding bool) chan []string {
 	yield := make(chan []string)
 	go func() {
+		defer close(yield)
 		file, err := getFileFromZip(archive, filename)
 		if err != nil {
 			printMessage(dbType, fmt.Sprintf("%s %s", filename, err.Error()), "FAIL")
@@ -158,7 +160,6 @@ func readCSVDatabase(archive []*zip.File, filename string, dbType string, comma 
 			yield <- record
 		}
 
-		close(yield)
 	}()
 	return yield
 }
@@ -170,4 +171,13 @@ func convertTZToOffset(t time.Time, tz string) string {
 	}
 	_, offset := t.In(location).Zone()
 	return fmt.Sprintf("UTC%+d", offset/3600)
+}
+
+func Unpack(response []byte) ([]*zip.File, error) {
+	zipReader, err := zip.NewReader(bytes.NewReader(response), int64(len(response)))
+	var file []*zip.File
+	if err == nil {
+		file = zipReader.File
+	}
+	return file, err
 }

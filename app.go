@@ -47,7 +47,7 @@ func main() {
 			OutputDir:  *outputDir,
 			ErrorsChan: errorChannel,
 		}
-		go i.Generate()
+		go Generate(&i)
 	}
 
 	if *tor {
@@ -70,7 +70,7 @@ func main() {
 			include:    *maxmindInclude,
 			exclude:    *maxmindExclude,
 		}
-		go m.Generate()
+		go Generate(&m)
 	}
 
 	if *ip2proxyFlag {

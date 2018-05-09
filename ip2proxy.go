@@ -2,7 +2,6 @@ package main
 
 import (
 	"archive/zip"
-	"bytes"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -79,9 +78,9 @@ func (o *ip2proxy) download() ([]byte, error) {
 }
 
 func (o *ip2proxy) unpack(response []byte) error {
-	zipReader, err := zip.NewReader(bytes.NewReader(response), int64(len(response)))
+	file, err := Unpack(response)
 	if err == nil {
-		o.archive = zipReader.File
+		o.archive = file
 	}
 	return err
 }

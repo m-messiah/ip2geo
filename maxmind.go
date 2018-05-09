@@ -2,7 +2,6 @@ package main
 
 import (
 	"archive/zip"
-	"bytes"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -15,37 +14,24 @@ import (
 	"time"
 )
 
-func (maxmind *MaxMind) Generate() {
-	answer, err := maxmind.Download()
-	if err != nil {
-		maxmind.ErrorsChan <- Error{err, "MaxMind", "Download"}
-		return
-	}
-	printMessage("MaxMind", "Download", "OK")
-	err = maxmind.Unpack(answer)
-	if err != nil {
-		maxmind.ErrorsChan <- Error{err, "MaxMind", "Unpack"}
-		return
-	}
-	printMessage("MaxMind", "Unpack", "OK")
-	cities, err := maxmind.GenerateCities()
-	if err != nil {
-		maxmind.ErrorsChan <- Error{err, "MaxMind", "Generate Cities"}
-		return
-	}
-	printMessage("MaxMind", "Generate cities", "OK")
-	err = maxmind.GenerateNetwork(cities)
-	if err != nil {
-		maxmind.ErrorsChan <- Error{err, "MaxMind", "Generate db"}
-		return
-	}
-	printMessage("MaxMind", "Generate db", "OK")
-	if err := maxmind.WriteMap(); err != nil {
-		maxmind.ErrorsChan <- Error{err, "MaxMind", "Write nginx maps"}
-		return
-	}
-	printMessage("MaxMind", "Write nginx maps", "OK")
-	maxmind.ErrorsChan <- Error{err: nil}
+type MaxMind struct {
+	database   Database
+	archive    []*zip.File
+	OutputDir  string
+	ErrorsChan chan Error
+	lang       string
+	ipver      int
+	tzNames    bool
+	include    string
+	exclude    string
+}
+
+func (maxmind *MaxMind) Name() string {
+	return "MaxMind"
+}
+
+func (maxmind *MaxMind) AddError(err Error) {
+	maxmind.ErrorsChan <- err
 }
 
 func (maxmind *MaxMind) Download() ([]byte, error) {
@@ -62,15 +48,14 @@ func (maxmind *MaxMind) Download() ([]byte, error) {
 }
 
 func (maxmind *MaxMind) Unpack(response []byte) error {
-	zipReader, err := zip.NewReader(bytes.NewReader(response), int64(len(response)))
-	if err != nil {
-		return err
+	file, err := Unpack(response)
+	if err == nil {
+		maxmind.archive = file
 	}
-	maxmind.archive = zipReader.File
-	return nil
+	return err
 }
 
-func (maxmind *MaxMind) lineToItem(record []string, currentTime time.Time) (*string, *Location, error, string) {
+func (maxmind *MaxMind) lineToItem(record []string, currentTime time.Time) (*string, *GeoItem, error, string) {
 	if len(record) < 13 {
 		return nil, nil, errors.New("too short line"), "FAIL"
 	}
@@ -88,15 +73,15 @@ func (maxmind *MaxMind) lineToItem(record []string, currentTime time.Time) (*str
 	if !maxmind.tzNames {
 		tz = convertTZToOffset(currentTime, record[12])
 	}
-	return &record[0], &Location{
+	return &record[0], &GeoItem{
 		ID:   record[0],
 		City: record[10],
 		TZ:   tz,
 	}, nil, ""
 }
 
-func (maxmind *MaxMind) GenerateCities() (map[string]Location, error) {
-	locations := make(map[string]Location)
+func (maxmind *MaxMind) Cities() (map[string]GeoItem, error) {
+	locations := make(map[string]GeoItem)
 	currentTime := time.Now()
 	filename := "GeoLite2-City-Locations-" + maxmind.lang + ".csv"
 	for record := range readCSVDatabase(maxmind.archive, filename, "MaxMind", ',', false) {
@@ -115,7 +100,7 @@ func (maxmind *MaxMind) GenerateCities() (map[string]Location, error) {
 	return locations, nil
 }
 
-func (maxmind *MaxMind) GenerateNetwork(locations map[string]Location) error {
+func (maxmind *MaxMind) Network(locations map[string]GeoItem) error {
 	var database Database
 	filename := "GeoLite2-City-Blocks-IPv" + strconv.Itoa(maxmind.ipver) + ".csv"
 	for record := range readCSVDatabase(maxmind.archive, filename, "MaxMind", ',', false) {
@@ -130,7 +115,7 @@ func (maxmind *MaxMind) GenerateNetwork(locations map[string]Location) error {
 		}
 		geoID := record[1]
 		if location, ok := locations[geoID]; ok {
-			database = append(database, Location{
+			database = append(database, GeoItem{
 				ID:      geoID,
 				City:    location.City,
 				Network: ipRange,
