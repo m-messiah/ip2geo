@@ -1,6 +1,6 @@
 # Ip2Geo importer
 
-[![Travis](https://img.shields.io/travis/m-messiah/ip2geo.svg?style=for-the-badge)](https://travis-ci.org/m-messiah/ip2geo)[![GitHub release](https://img.shields.io/github/release/m-messiah/ip2geo.svg?style=for-the-badge)](https://github.com/m-messiah/ip2geo/releases/latest)[![Github Releases](https://img.shields.io/github/downloads/m-messiah/ip2geo/total.svg?style=for-the-badge)](https://github.com/m-messiah/ip2geo/releases)
+[![Travis](https://img.shields.io/travis/m-messiah/ip2geo.svg?style=for-the-badge)](https://travis-ci.org/m-messiah/ip2geo)[![Maintainability](https://api.codeclimate.com/v1/badges/8687e760d260b8499393/maintainability)](https://codeclimate.com/github/m-messiah/ip2geo/maintainability)[![GitHub release](https://img.shields.io/github/release/m-messiah/ip2geo.svg?style=for-the-badge)](https://github.com/m-messiah/ip2geo/releases/latest)[![Github Releases](https://img.shields.io/github/downloads/m-messiah/ip2geo/total.svg?style=for-the-badge)](https://github.com/m-messiah/ip2geo/releases)
 
 Импортер ipgeo-данных в файлы, понятные для [nginx geo module](http://nginx.org/ru/docs/http/ngx_http_geo_module.html), с поддержкой кодов регионов РФ.
 

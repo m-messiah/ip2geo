@@ -4,15 +4,11 @@ import (
 	"archive/zip"
 	"bytes"
 	"encoding/base64"
-	"encoding/csv"
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"sort"
-
-	"golang.org/x/net/html/charset"
 )
 
 func ipgeobaseGenerate(outputDir string, errorsChan chan Error) {
@@ -72,40 +68,7 @@ func ipgeobaseUnpack(response []byte) ([]*zip.File, error) {
 }
 
 func readIgCSV(archive []*zip.File, filename string) chan []string {
-	yield := make(chan []string)
-	go func() {
-		for _, file := range archive {
-			if file.Name == filename {
-				fp, err := file.Open()
-				if err != nil {
-					printMessage("IPGeobase", fmt.Sprintf("Can't open %s", filename), "FAIL")
-					yield <- nil
-				}
-				defer fp.Close()
-				utf8, err := charset.NewReader(fp, "text/csv; charset=windows-1251")
-				if err != nil {
-					printMessage("IPGeobase", fmt.Sprintf("%s not in cp1251", filename), "FAIL")
-					yield <- nil
-				}
-				r := csv.NewReader(utf8)
-				r.Comma, r.LazyQuotes = '\t', true
-				for {
-					record, err := r.Read()
-					// Stop at EOF.
-					if err == io.EOF {
-						break
-					}
-					if err != nil {
-						printMessage("IPGeobase", fmt.Sprintf("Can't read line from %s", filename), "WARN")
-						continue
-					}
-					yield <- record
-				}
-			}
-		}
-		close(yield)
-	}()
-	return yield
+	return readCSVDatabase(archive, filename, "IPGeobase", '\t', true)
 }
 
 func ipgeobaseCities(archive []*zip.File) (map[string]City, error) {

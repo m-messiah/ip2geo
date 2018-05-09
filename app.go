@@ -12,7 +12,7 @@ func main() {
 	ipgeobase := flag.Bool("ipgeobase", false, "enable ipgeobase generation")
 	tor := flag.Bool("tor", false, "enable tor generation")
 	ip2proxyFlag := flag.Bool("ip2proxy", false, "enable ip2proxy generation")
-	ip2proxyToken := flag.String("ip2proxy-token", "", "Get token here https://lite.ip2location.com/file-download" )
+	ip2proxyToken := flag.String("ip2proxy-token", "", "Get token here https://lite.ip2location.com/file-download")
 	maxmind := flag.Bool("maxmind", false, "enable maxmind generation")
 	maxmindIPVer := flag.Int("ipver", 4, "MaxMind ip version (4 or 6)")
 	maxmindLang := flag.String("lang", "ru", "MaxMind city name language")
@@ -59,9 +59,9 @@ func main() {
 	if *ip2proxyFlag {
 		goroutinesCount++
 		o := ip2proxy{
-			Token: *ip2proxyToken,
+			Token:      *ip2proxyToken,
 			ErrorsChan: errorChannel,
-			OutputDir: *outputDir,
+			OutputDir:  *outputDir,
 		}
 		go o.Get()
 	}
