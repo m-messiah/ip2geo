@@ -3,16 +3,13 @@ package main
 import (
 	"archive/zip"
 	"bytes"
-	"encoding/csv"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
 	"os"
 	"path"
 	"strconv"
-	"strings"
 )
 
 type ip2proxyItem struct {
@@ -91,34 +88,13 @@ func (o *ip2proxy) unpack(response []byte) error {
 
 func (o *ip2proxy) Parse(filename string) error {
 	var list []*ip2proxyItem
-	for _, file := range o.archive {
-		if strings.Contains(file.Name, filename) {
-			fp, err := file.Open()
-			if err != nil {
-				printMessage("ip2proxy", fmt.Sprintf("Can't open %s", filename), "FAIL")
-				continue
-			}
-			defer fp.Close()
-			r := csv.NewReader(fp)
-			r.LazyQuotes = true
-			for {
-				record, err := r.Read()
-				// Stop at EOF.
-				if err == io.EOF {
-					break
-				}
-				if err != nil {
-					printMessage("ip2proxy", fmt.Sprintf("Can't read line from %s", filename), "WARN")
-					continue
-				}
-				item, err := o.lineToItem(record)
-				if err != nil {
-					printMessage("ip2proxy", fmt.Sprintf("Can't parse line from %s with %v", filename, err), "WARN")
-					continue
-				}
-				list = append(list, item)
-			}
+	for record := range readCSVDatabase(o.archive, filename, "ip2proxy", ',', false) {
+		item, err := o.lineToItem(record)
+		if err != nil {
+			printMessage("ip2proxy", fmt.Sprintf("Can't parse line from %s with %v", filename, err), "WARN")
+			continue
 		}
+		list = append(list, item)
 	}
 	o.items = list
 	return nil
