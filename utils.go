@@ -12,6 +12,7 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"time"
 	"unicode"
 
 	"github.com/fatih/color"
@@ -160,4 +161,13 @@ func readCSVDatabase(archive []*zip.File, filename string, dbType string, comma 
 		close(yield)
 	}()
 	return yield
+}
+
+func convertTZToOffset(t time.Time, tz string) string {
+	location, err := time.LoadLocation(tz)
+	if err != nil {
+		return ""
+	}
+	_, offset := t.In(location).Zone()
+	return fmt.Sprintf("UTC%+d", offset/3600)
 }

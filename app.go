@@ -53,7 +53,16 @@ func main() {
 
 	if *maxmind {
 		goroutinesCount++
-		go maxmindGenerate(*outputDir, *maxmindLang, *maxmindIPVer, *maxmindTZNames, *maxmindInclude, *maxmindExclude, errorChannel)
+		m := MaxMind{
+			OutputDir:  *outputDir,
+			ErrorsChan: errorChannel,
+			lang:       *maxmindLang,
+			ipver:      *maxmindIPVer,
+			tzNames:    *maxmindTZNames,
+			include:    *maxmindInclude,
+			exclude:    *maxmindExclude,
+		}
+		go m.Generate()
 	}
 
 	if *ip2proxyFlag {
