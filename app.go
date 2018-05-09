@@ -43,7 +43,11 @@ func main() {
 	errorChannel := make(chan Error)
 	if *ipgeobase {
 		goroutinesCount++
-		go ipgeobaseGenerate(*outputDir, errorChannel)
+		i := IPGeobase{
+			OutputDir:  *outputDir,
+			ErrorsChan: errorChannel,
+		}
+		go i.Generate()
 	}
 
 	if *tor {

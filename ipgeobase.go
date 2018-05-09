@@ -11,40 +11,40 @@ import (
 	"sort"
 )
 
-func ipgeobaseGenerate(outputDir string, errorsChan chan Error) {
-	answer, err := ipgeobaseDownload()
+func (ipgeobase *IPGeobase) Generate() {
+	answer, err := ipgeobase.Download()
 	if err != nil {
-		errorsChan <- Error{err, "IPGeobase", "Download"}
+		ipgeobase.ErrorsChan <- Error{err, "IPGeobase", "Download"}
 		return
 	}
 	printMessage("IPGeobase", "Download", "OK")
-	archive, err := ipgeobaseUnpack(answer)
+	err = ipgeobase.Unpack(answer)
 	if err != nil {
-		errorsChan <- Error{err, "IPGeobase", "Unpack"}
+		ipgeobase.ErrorsChan <- Error{err, "IPGeobase", "Unpack"}
 		return
 	}
 	printMessage("IPGeobase", "Unpack", "OK")
-	cities, err := ipgeobaseCities(archive)
+	cities, err := ipgeobase.Cities()
 	if err != nil {
-		errorsChan <- Error{err, "IPGeobase", "Generate Cities"}
+		ipgeobase.ErrorsChan <- Error{err, "IPGeobase", "Generate Cities"}
 		return
 	}
 	printMessage("IPGeobase", "Generate cities", "OK")
-	database, err := ipgeobaseCidr(archive, cities)
+	err = ipgeobase.Cidr(cities)
 	if err != nil {
-		errorsChan <- Error{err, "IPGeobase", "Generate db"}
+		ipgeobase.ErrorsChan <- Error{err, "IPGeobase", "Generate db"}
 		return
 	}
 	printMessage("IPGeobase", "Generate database", "OK")
-	if err := ipgeobaseWriteMap(outputDir, database); err != nil {
-		errorsChan <- Error{err, "IPGeobase", "Write map"}
+	if err := ipgeobase.WriteMap(); err != nil {
+		ipgeobase.ErrorsChan <- Error{err, "IPGeobase", "Write map"}
 		return
 	}
 	printMessage("IPGeobase", "Write nginx maps", "OK")
-	errorsChan <- Error{err: nil}
+	ipgeobase.ErrorsChan <- Error{err: nil}
 }
 
-func ipgeobaseDownload() ([]byte, error) {
+func (ipgeobase *IPGeobase) Download() ([]byte, error) {
 	resp, err := http.Get("http://ipgeobase.ru/files/db/Main/geo_files.zip")
 	if err != nil {
 		printMessage("IPGeobase", "Download no answer", "FAIL")
@@ -59,21 +59,18 @@ func ipgeobaseDownload() ([]byte, error) {
 	return answer, nil
 }
 
-func ipgeobaseUnpack(response []byte) ([]*zip.File, error) {
+func (ipgeobase *IPGeobase) Unpack(response []byte) error {
 	zipReader, err := zip.NewReader(bytes.NewReader(response), int64(len(response)))
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return zipReader.File, nil
+	ipgeobase.archive = zipReader.File
+	return nil
 }
 
-func readIgCSV(archive []*zip.File, filename string) chan []string {
-	return readCSVDatabase(archive, filename, "IPGeobase", '\t', true)
-}
-
-func ipgeobaseCities(archive []*zip.File) (map[string]City, error) {
+func (ipgeobase *IPGeobase) Cities() (map[string]City, error) {
 	cities := make(map[string]City)
-	for record := range readIgCSV(archive, "cities.txt") {
+	for record := range readCSVDatabase(ipgeobase.archive, "cities.txt", "IPGeobase", '\t', true) {
 		if len(record) < 3 {
 			printMessage("IPGeobase", fmt.Sprintf("cities.txt too short line: %s", record), "FAIL")
 			continue
@@ -97,9 +94,9 @@ func ipgeobaseCities(archive []*zip.File) (map[string]City, error) {
 	return cities, nil
 }
 
-func ipgeobaseCidr(archive []*zip.File, cities map[string]City) (map[string]City, error) {
+func (ipgeobase *IPGeobase) Cidr(cities map[string]City) error {
 	database := make(map[string]City)
-	for record := range readIgCSV(archive, "cidr_optim.txt") {
+	for record := range readCSVDatabase(ipgeobase.archive, "cidr_optim.txt", "IPGeobase", '\t', true) {
 		if len(record) < 5 {
 			printMessage("IPGeobase", fmt.Sprintf("cidr_optim.txt too short line: %s", record), "FAIL")
 			continue
@@ -111,36 +108,37 @@ func ipgeobaseCidr(archive []*zip.File, cities map[string]City) (map[string]City
 		}
 	}
 	if len(database) < 1 {
-		return nil, errors.New("Database is empty")
+		return errors.New("Database is empty")
 	}
-	return database, nil
+	ipgeobase.database = database
+	return nil
 }
 
-func ipgeobaseWriteMap(outputDir string, database map[string]City) error {
-	reg, err := openMapFile(outputDir, "region.txt")
+func (ipgeobase *IPGeobase) WriteMap() error {
+	reg, err := openMapFile(ipgeobase.OutputDir, "region.txt")
 	if err != nil {
 		return err
 	}
-	city, err := openMapFile(outputDir, "city.txt")
+	city, err := openMapFile(ipgeobase.OutputDir, "city.txt")
 	if err != nil {
 		return err
 	}
-	tz, err := openMapFile(outputDir, "tz.txt")
+	tz, err := openMapFile(ipgeobase.OutputDir, "tz.txt")
 	if err != nil {
 		return err
 	}
 	defer reg.Close()
 	defer city.Close()
 	defer tz.Close()
-	ipRanges := make(IPList, len(database))
+	ipRanges := make(IPList, len(ipgeobase.database))
 	i := 0
-	for ipRange := range database {
+	for ipRange := range ipgeobase.database {
 		ipRanges[i] = ipRange
 		i++
 	}
 	sort.Sort(ipRanges)
 	for _, ipRange := range ipRanges {
-		info := database[ipRange]
+		info := ipgeobase.database[ipRange]
 		fmt.Fprintf(city, "%s %s;\n", ipRange, base64.StdEncoding.EncodeToString([]byte(info.Name)))
 		fmt.Fprintf(reg, "%s %02d;\n", ipRange, info.RegID)
 		fmt.Fprintf(tz, "%s %s;\n", ipRange, info.TZ)
