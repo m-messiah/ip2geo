@@ -19,6 +19,7 @@ func main() {
 	maxmindTZNames := flag.Bool("tznames", false, "MaxMind TZ in names format (for example `Europe/Moscow`)")
 	maxmindInclude := flag.String("include", "", "MaxMind output filter: only these countries")
 	maxmindExclude := flag.String("exclude", "", "MaxMind output filter: except these countries")
+	maxmindNoBase64 := flag.Bool("nobase64", false, "MaxMind Cities as-is (without base64 encode). DO NOT USE IT IF YOU NOT SURE ABOUT MaxMind encoding")
 	quiet := flag.Bool("q", false, "Be quiet - skip [OK]")
 	veryQuiet := flag.Bool("qq", false, "Be very quiet - show only errors")
 	flag.Parse()
@@ -69,6 +70,7 @@ func main() {
 			tzNames:    *maxmindTZNames,
 			include:    *maxmindInclude,
 			exclude:    *maxmindExclude,
+			nobase64:   *maxmindNoBase64,
 		}
 		go Generate(&m)
 	}
