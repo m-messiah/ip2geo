@@ -1,7 +1,8 @@
-v1.0.5 / 2018-05-09
+v1.0.5 / 2019-02-19
 ==================
 
-  * Refactoring
+  * Add `-nobase64` flag to skip base64 MaxMind cities encoding
+  * Add multiarch build/release
 
 v1.0.4 / 2018-03-01
 ==================
