@@ -24,6 +24,7 @@ type MaxMind struct {
 	tzNames    bool
 	include    string
 	exclude    string
+	nobase64   bool
 }
 
 func (maxmind *MaxMind) Name() string {
@@ -144,7 +145,14 @@ func (maxmind *MaxMind) WriteMap() error {
 	defer city.Close()
 	defer tz.Close()
 	for _, location := range maxmind.database {
-		fmt.Fprintf(city, "%s %s;\n", location.Network, base64.StdEncoding.EncodeToString([]byte(location.City)))
+		var cityName string
+		if maxmind.nobase64 {
+			cityName = location.City
+		} else {
+			cityName = base64.StdEncoding.EncodeToString([]byte(location.City))
+		}
+
+		fmt.Fprintf(city, "%s %s;\n", location.Network, cityName)
 		fmt.Fprintf(tz, "%s %s;\n", location.Network, location.TZ)
 	}
 	return nil
