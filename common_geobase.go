@@ -1,13 +1,15 @@
 package main
 
 type GeoItem struct {
-	Name    string
-	RegID   int
-	ID      string
-	City    string
-	Network string
-	TZ      string
-	NetIP   uint32
+	Name        string
+	RegID       int
+	ID          string
+	City        string
+	Network     string
+	TZ          string
+	NetIP       uint32
+	Country     string
+	CountryCode string
 }
 
 type GeoBase interface {

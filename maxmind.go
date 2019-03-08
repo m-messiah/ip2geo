@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -24,7 +25,8 @@ type MaxMind struct {
 	tzNames    bool
 	include    string
 	exclude    string
-	nobase64   bool
+	noBase64   bool
+	noCountry  bool
 }
 
 func (maxmind *MaxMind) Name() string {
@@ -60,24 +62,29 @@ func (maxmind *MaxMind) lineToItem(record []string, currentTime time.Time) (*str
 	if len(record) < 13 {
 		return nil, nil, errors.New("too short line"), "FAIL"
 	}
-	country := record[4]
-	if len(record[10]) < 1 || len(country) < 1 {
+	var countryCode = record[4]
+	if len(countryCode) < 1 || len(record[5]) < 1 {
 		return nil, nil, errors.New("too short country"), ""
 	}
-	if len(maxmind.include) > 1 && !strings.Contains(maxmind.include, country) {
+	if len(maxmind.include) > 1 && !strings.Contains(maxmind.include, countryCode) {
 		return nil, nil, errors.New("country skipped"), ""
 	}
-	if strings.Contains(maxmind.exclude, country) {
+	if strings.Contains(maxmind.exclude, countryCode) {
 		return nil, nil, errors.New("country excluded"), ""
 	}
 	tz := record[12]
 	if !maxmind.tzNames {
 		tz = convertTZToOffset(currentTime, record[12])
 	}
+	if len(record[10]) < 1 {
+		return nil, nil, errors.New("too short city name"), ""
+	}
 	return &record[0], &GeoItem{
-		ID:   record[0],
-		City: record[10],
-		TZ:   tz,
+		ID:          record[0],
+		City:        record[10],
+		TZ:          tz,
+		CountryCode: record[4],
+		Country:     record[5],
 	}, nil, ""
 }
 
@@ -117,11 +124,13 @@ func (maxmind *MaxMind) Network(locations map[string]GeoItem) error {
 		geoID := record[1]
 		if location, ok := locations[geoID]; ok {
 			database = append(database, GeoItem{
-				ID:      geoID,
-				City:    location.City,
-				Network: ipRange,
-				TZ:      location.TZ,
-				NetIP:   ip2Int(netIP),
+				ID:          geoID,
+				City:        location.City,
+				Network:     ipRange,
+				TZ:          location.TZ,
+				NetIP:       ip2Int(netIP),
+				Country:     location.Country,
+				CountryCode: location.CountryCode,
 			})
 		}
 	}
@@ -142,18 +151,39 @@ func (maxmind *MaxMind) WriteMap() error {
 	if err != nil {
 		return err
 	}
+	var country *os.File
+	var countryCode *os.File
+	if !maxmind.noCountry {
+		country, err = openMapFile(maxmind.OutputDir, "mm_country.txt")
+		if err != nil {
+			return err
+		}
+		countryCode, err = openMapFile(maxmind.OutputDir, "mm_country_code.txt")
+		if err != nil {
+			return err
+		}
+		defer country.Close()
+		defer countryCode.Close()
+	}
 	defer city.Close()
 	defer tz.Close()
 	for _, location := range maxmind.database {
 		var cityName string
-		if maxmind.nobase64 {
+		var countryName string
+		if maxmind.noBase64 {
 			cityName = location.City
+			countryName = location.Country
 		} else {
 			cityName = base64.StdEncoding.EncodeToString([]byte(location.City))
+			countryName = base64.StdEncoding.EncodeToString([]byte(location.Country))
 		}
 
 		fmt.Fprintf(city, "%s %s;\n", location.Network, cityName)
 		fmt.Fprintf(tz, "%s %s;\n", location.Network, location.TZ)
+		if !maxmind.noCountry {
+			fmt.Fprintf(country, "%s %s;\n", location.Network, countryName)
+			fmt.Fprintf(countryCode, "%s %s;\n", location.Network, location.CountryCode)
+		}
 	}
 	return nil
 }
