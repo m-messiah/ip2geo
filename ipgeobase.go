@@ -62,7 +62,7 @@ func (ipgeobase *IPGeobase) Cities() (map[string]GeoItem, error) {
 				region, _ = REGIONS["Москва"]
 			}
 			cities[cid] = GeoItem{
-				Name:  city,
+				City:  city,
 				RegID: region.ID,
 				TZ:    region.TZ,
 			}
@@ -119,7 +119,7 @@ func (ipgeobase *IPGeobase) WriteMap() error {
 	sort.Sort(ipRanges)
 	for _, ipRange := range ipRanges {
 		info := ipgeobase.database[ipRange]
-		fmt.Fprintf(city, "%s %s;\n", ipRange, base64.StdEncoding.EncodeToString([]byte(info.Name)))
+		fmt.Fprintf(city, "%s %s;\n", ipRange, base64.StdEncoding.EncodeToString([]byte(info.City)))
 		fmt.Fprintf(reg, "%s %02d;\n", ipRange, info.RegID)
 		fmt.Fprintf(tz, "%s %s;\n", ipRange, info.TZ)
 	}
