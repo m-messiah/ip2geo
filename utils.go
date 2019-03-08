@@ -3,7 +3,6 @@ package main
 import (
 	"archive/zip"
 	"bytes"
-	"encoding/binary"
 	"encoding/csv"
 	"errors"
 	"fmt"
@@ -11,7 +10,6 @@ import (
 	"net"
 	"os"
 	"path"
-	"strconv"
 	"strings"
 	"time"
 	"unicode"
@@ -80,14 +78,10 @@ func getIPRange(ipver int, network string) string {
 		}
 		return fmt.Sprintf("%s-%s", ipnet.IP, ipb)
 	}
-	return network
-}
-
-func ip2Int(ip net.IP) uint32 {
-	if len(ip) == 16 {
-		return binary.BigEndian.Uint32(ip[12:16])
+	if strings.Contains(network, ":") && strings.Contains(network, "/") {
+		return network
 	}
-	return binary.BigEndian.Uint32(ip)
+	return ""
 }
 
 // Convert uint to net.IP
@@ -99,25 +93,6 @@ func int2ip(ipnr int64) net.IP {
 	bytes[3] = byte((ipnr >> 24) & 0xFF)
 
 	return net.IPv4(bytes[3], bytes[2], bytes[1], bytes[0])
-}
-
-// Convert net.IP to int64
-func ip2int(ipnr net.IP) int64 {
-	bits := strings.Split(ipnr.String(), ".")
-
-	b0, _ := strconv.Atoi(bits[0])
-	b1, _ := strconv.Atoi(bits[1])
-	b2, _ := strconv.Atoi(bits[2])
-	b3, _ := strconv.Atoi(bits[3])
-
-	var sum int64
-
-	sum += int64(b0) << 24
-	sum += int64(b1) << 16
-	sum += int64(b2) << 8
-	sum += int64(b3)
-
-	return sum
 }
 
 func readCSVDatabase(archive []*zip.File, filename string, dbType string, comma rune, windows_encoding bool) chan []string {

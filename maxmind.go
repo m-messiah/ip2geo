@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"net"
 	"net/http"
 	"os"
 	"sort"
@@ -117,8 +116,7 @@ func (maxmind *MaxMind) Network(locations map[string]GeoItem) error {
 			continue
 		}
 		ipRange := getIPRange(maxmind.ipver, record[0])
-		netIP := net.ParseIP(strings.Split(ipRange, "-")[0])
-		if netIP == nil {
+		if ipRange == "" {
 			continue
 		}
 		geoID := record[1]
@@ -128,7 +126,6 @@ func (maxmind *MaxMind) Network(locations map[string]GeoItem) error {
 				City:        location.City,
 				Network:     ipRange,
 				TZ:          location.TZ,
-				NetIP:       ip2Int(netIP),
 				Country:     location.Country,
 				CountryCode: location.CountryCode,
 			})
