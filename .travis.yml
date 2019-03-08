@@ -13,6 +13,8 @@ script:
   - go build -o ip2geo
   - ./ip2geo
   - TEST_NGINX_IP2GEO_DIR=$PWD prove
+  - ./ip2geo -ipver 6
+  - TEST_NGINX_IP2GEO_DIR=$PWD prove
   - GOOS=darwin go build -o ip2geo-mac
   - GOOS=freebsd go build -o ip2geo-freebsd
   - GOOS=linux GOARCH=386 go build -o ip2geo-linux32
