@@ -1,3 +1,11 @@
+v1.0.6 / 2019-03-08
+==================
+
+  * Add country generation from MaxMind
+  * Add county iso_code generation from MaxMind
+  * Add `-nocountry` flag to skip MaxMind country and country code generation
+  * Fix IPv6 generation for MaxMind
+
 v1.0.5 / 2019-02-19
 ==================
 
