@@ -26,6 +26,16 @@ __DATA__
         "" $city_mm;
         default $city_geo;
     }
+# Country
+    geo $country {
+        ranges;
+        include $TEST_NGINX_IP2GEO_DIR/output/mm_country.txt;
+    }
+# CountryCode
+    geo $country_code {
+        ranges;
+        include $TEST_NGINX_IP2GEO_DIR/output/mm_country_code.txt;
+    }
 # TZ
     geo $tz_geo {
         ranges;
