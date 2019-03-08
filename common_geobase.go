@@ -7,7 +7,6 @@ type GeoItem struct {
 	City        string
 	Network     string
 	TZ          string
-	NetIP       uint32
 	Country     string
 	CountryCode string
 }
