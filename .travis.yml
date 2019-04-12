@@ -15,6 +15,7 @@ script:
   - TEST_NGINX_IP2GEO_DIR=$PWD prove t/nginx_geo.t
   - ./ip2geo -ipver 6 -lang en -nobase64
   - TEST_NGINX_IP2GEO_DIR=$PWD prove t/nginx_geo_ipv6.t
+after_success:
   - GOOS=darwin go build -o ip2geo-mac
   - GOOS=freebsd go build -o ip2geo-freebsd
   - GOOS=linux GOARCH=386 go build -o ip2geo-linux32

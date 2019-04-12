@@ -61,7 +61,7 @@ func (maxmind *MaxMind) lineToItem(record []string, currentTime time.Time) (*str
 	if len(record) < 13 {
 		return nil, nil, errors.New("too short line"), "FAIL"
 	}
-	var countryCode = record[4]
+	countryCode := record[4]
 	if len(countryCode) < 1 || len(record[5]) < 1 {
 		return nil, nil, errors.New("too short country"), ""
 	}
@@ -109,17 +109,19 @@ func (maxmind *MaxMind) Cities() (map[string]GeoItem, error) {
 
 func (maxmind *MaxMind) Network(locations map[string]GeoItem) error {
 	var database Database
+	var ipRange string
+	var geoID string
 	filename := "GeoLite2-City-Blocks-IPv" + strconv.Itoa(maxmind.ipver) + ".csv"
 	for record := range readCSVDatabase(maxmind.archive, filename, "MaxMind", ',', false) {
 		if len(record) < 2 {
 			printMessage("MaxMind", fmt.Sprintf(filename+" too short line: %s", record), "FAIL")
 			continue
 		}
-		ipRange := getIPRange(maxmind.ipver, record[0])
+		ipRange = getIPRange(maxmind.ipver, record[0])
 		if ipRange == "" {
 			continue
 		}
-		geoID := record[1]
+		geoID = record[1]
 		if location, ok := locations[geoID]; ok {
 			database = append(database, GeoItem{
 				ID:          geoID,
@@ -168,8 +170,8 @@ func (maxmind *MaxMind) WriteMap() error {
 		var cityName string
 		var countryName string
 		if maxmind.noBase64 {
-			cityName = location.City
-			countryName = location.Country
+			cityName = "\"" + location.City + "\""
+			countryName = "\"" + location.Country + "\""
 		} else {
 			cityName = base64.StdEncoding.EncodeToString([]byte(location.City))
 			countryName = base64.StdEncoding.EncodeToString([]byte(location.Country))
