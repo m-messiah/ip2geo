@@ -9,21 +9,22 @@ import (
 	"net/http"
 )
 
+// IPGeobase - GeoBase compatible generator for ipgeobase.ru
 type IPGeobase struct {
 	OutputDir  string
 	ErrorsChan chan Error
 	archive    []*zip.File
 }
 
-func (ipgeobase *IPGeobase) Name() string {
+func (ipgeobase *IPGeobase) name() string {
 	return "IPGeobase"
 }
 
-func (ipgeobase *IPGeobase) AddError(err Error) {
+func (ipgeobase *IPGeobase) addError(err Error) {
 	ipgeobase.ErrorsChan <- err
 }
 
-func (ipgeobase *IPGeobase) Download() ([]byte, error) {
+func (ipgeobase *IPGeobase) download() ([]byte, error) {
 	resp, err := http.Get("http://ipgeobase.ru/files/db/Main/geo_files.zip")
 	if err != nil {
 		printMessage("IPGeobase", "Download no answer", "FAIL")
@@ -38,7 +39,7 @@ func (ipgeobase *IPGeobase) Download() ([]byte, error) {
 	return answer, nil
 }
 
-func (ipgeobase *IPGeobase) Unpack(response []byte) error {
+func (ipgeobase *IPGeobase) unpack(response []byte) error {
 	file, err := Unpack(response)
 	if err == nil {
 		ipgeobase.archive = file
@@ -46,8 +47,8 @@ func (ipgeobase *IPGeobase) Unpack(response []byte) error {
 	return err
 }
 
-func (ipgeobase *IPGeobase) Cities() (map[string]GeoItem, error) {
-	cities := make(map[string]GeoItem)
+func (ipgeobase *IPGeobase) citiesDB() (map[string]geoItem, error) {
+	cities := make(map[string]geoItem)
 	for record := range readCSVDatabase(ipgeobase.archive, "cities.txt", "IPGeobase", '\t', true) {
 		if len(record) < 3 {
 			printMessage("IPGeobase", fmt.Sprintf("cities.txt too short line: %s", record), "FAIL")
@@ -59,7 +60,7 @@ func (ipgeobase *IPGeobase) Cities() (map[string]GeoItem, error) {
 			if cid == "1199" {
 				region, _ = REGIONS["Москва"]
 			}
-			cities[cid] = GeoItem{
+			cities[cid] = geoItem{
 				City:  city,
 				RegID: region.ID,
 				TZ:    region.TZ,
@@ -72,8 +73,8 @@ func (ipgeobase *IPGeobase) Cities() (map[string]GeoItem, error) {
 	return cities, nil
 }
 
-func (ipgeobase *IPGeobase) parseNetwork(cities map[string]GeoItem) <-chan GeoItem {
-	database := make(chan GeoItem)
+func (ipgeobase *IPGeobase) parseNetwork(cities map[string]geoItem) <-chan geoItem {
+	database := make(chan geoItem)
 	go func() {
 		for record := range readCSVDatabase(ipgeobase.archive, "cidr_optim.txt", "IPGeobase", '\t', true) {
 			if len(record) < 5 {
@@ -92,7 +93,7 @@ func (ipgeobase *IPGeobase) parseNetwork(cities map[string]GeoItem) <-chan GeoIt
 	return database
 }
 
-func (ipgeobase *IPGeobase) WriteMap(cities map[string]GeoItem) error {
+func (ipgeobase *IPGeobase) writeMap(cities map[string]geoItem) error {
 	reg, err := openMapFile(ipgeobase.OutputDir, "region.txt")
 	if err != nil {
 		return err

@@ -1,6 +1,6 @@
 package main
 
-type GeoItem struct {
+type geoItem struct {
 	Name        string
 	RegID       int
 	ID          string
@@ -11,38 +11,40 @@ type GeoItem struct {
 	CountryCode string
 }
 
+// GeoBase interface for downloadable and convertible geo database
 type GeoBase interface {
-	Download() ([]byte, error)
-	Unpack([]byte) error
-	Cities() (map[string]GeoItem, error)
-	WriteMap(map[string]GeoItem) error
-	Name() string
-	AddError(Error)
+	download() ([]byte, error)
+	unpack([]byte) error
+	citiesDB() (map[string]geoItem, error)
+	writeMap(map[string]geoItem) error
+	name() string
+	addError(Error)
 }
 
+// Generate GeoBase (download, unpack, parse and write in nginx map format)
 func Generate(geobase GeoBase) {
-	answer, err := geobase.Download()
+	answer, err := geobase.download()
 	if err != nil {
-		geobase.AddError(Error{err, geobase.Name(), "Download"})
+		geobase.addError(Error{err, geobase.name(), "Download"})
 		return
 	}
-	printMessage(geobase.Name(), "Download", "OK")
-	err = geobase.Unpack(answer)
+	printMessage(geobase.name(), "Download", "OK")
+	err = geobase.unpack(answer)
 	if err != nil {
-		geobase.AddError(Error{err, geobase.Name(), "Unpack"})
+		geobase.addError(Error{err, geobase.name(), "Unpack"})
 		return
 	}
-	printMessage(geobase.Name(), "Unpack", "OK")
-	cities, err := geobase.Cities()
+	printMessage(geobase.name(), "Unpack", "OK")
+	cities, err := geobase.citiesDB()
 	if err != nil {
-		geobase.AddError(Error{err, geobase.Name(), "Generate Cities"})
+		geobase.addError(Error{err, geobase.name(), "Generate Cities"})
 		return
 	}
-	printMessage(geobase.Name(), "Generate cities", "OK")
-	if err := geobase.WriteMap(cities); err != nil {
-		geobase.AddError(Error{err, geobase.Name(), "Write map"})
+	printMessage(geobase.name(), "Generate cities", "OK")
+	if err := geobase.writeMap(cities); err != nil {
+		geobase.addError(Error{err, geobase.name(), "Write map"})
 		return
 	}
-	printMessage(geobase.Name(), "Write nginx maps", "OK")
-	geobase.AddError(Error{err: nil})
+	printMessage(geobase.name(), "Write nginx maps", "OK")
+	geobase.addError(Error{err: nil})
 }

@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-var LogLevel int = 0
+var logLevel int
 
 func main() {
 	outputDir := flag.String("output", "output", "output directory for files")
@@ -32,13 +32,13 @@ func main() {
 		*ip2proxyFlag = *ip2proxyToken != ""
 	}
 	if *quiet {
-		LogLevel = 1
+		logLevel = 1
 	}
 	if *veryQuiet {
-		LogLevel = 2
+		logLevel = 2
 	}
 	os.MkdirAll(*outputDir, 0755)
-	if LogLevel < 2 {
+	if logLevel < 2 {
 		printMessage(" ", "Use output directory", *outputDir)
 	}
 	goroutinesCount := 0
@@ -94,7 +94,7 @@ func main() {
 			os.Exit(1)
 		}
 	}
-	if LogLevel < 1 {
+	if logLevel < 1 {
 		printMessage(" ", "Generation done", "OK")
 	}
 }

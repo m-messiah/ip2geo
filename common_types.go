@@ -23,6 +23,7 @@ func (d IPList) Swap(i, j int) {
 	d[i], d[j] = d[j], d[i]
 }
 
+// Error of GeoBase handle
 type Error struct {
 	err    error
 	Module string
