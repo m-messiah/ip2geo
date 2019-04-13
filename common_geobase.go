@@ -15,8 +15,7 @@ type GeoBase interface {
 	Download() ([]byte, error)
 	Unpack([]byte) error
 	Cities() (map[string]GeoItem, error)
-	Network(map[string]GeoItem) error
-	WriteMap() error
+	WriteMap(map[string]GeoItem) error
 	Name() string
 	AddError(Error)
 }
@@ -40,13 +39,7 @@ func Generate(geobase GeoBase) {
 		return
 	}
 	printMessage(geobase.Name(), "Generate cities", "OK")
-	err = geobase.Network(cities)
-	if err != nil {
-		geobase.AddError(Error{err, geobase.Name(), "Generate db"})
-		return
-	}
-	printMessage(geobase.Name(), "Generate database", "OK")
-	if err := geobase.WriteMap(); err != nil {
+	if err := geobase.WriteMap(cities); err != nil {
 		geobase.AddError(Error{err, geobase.Name(), "Write map"})
 		return
 	}

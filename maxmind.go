@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -107,41 +106,33 @@ func (maxmind *MaxMind) Cities() (map[string]GeoItem, error) {
 	return locations, nil
 }
 
-func (maxmind *MaxMind) Network(locations map[string]GeoItem) error {
-	var database Database
-	var ipRange string
-	var geoID string
-	filename := "GeoLite2-City-Blocks-IPv" + strconv.Itoa(maxmind.ipver) + ".csv"
-	for record := range readCSVDatabase(maxmind.archive, filename, "MaxMind", ',', false) {
-		if len(record) < 2 {
-			printMessage("MaxMind", fmt.Sprintf(filename+" too short line: %s", record), "FAIL")
-			continue
+func (maxmind *MaxMind) parseNetwork(locations map[string]GeoItem) <-chan GeoItem {
+	database := make(chan GeoItem)
+	go func() {
+		var ipRange string
+		var geoID string
+		filename := "GeoLite2-City-Blocks-IPv" + strconv.Itoa(maxmind.ipver) + ".csv"
+		for record := range readCSVDatabase(maxmind.archive, filename, "MaxMind", ',', false) {
+			if len(record) < 2 {
+				printMessage("MaxMind", fmt.Sprintf(filename+" too short line: %s", record), "FAIL")
+				continue
+			}
+			ipRange = getIPRange(maxmind.ipver, record[0])
+			if ipRange == "" {
+				continue
+			}
+			geoID = record[1]
+			if location, ok := locations[geoID]; ok {
+				location.Network = ipRange
+				database <- location
+			}
 		}
-		ipRange = getIPRange(maxmind.ipver, record[0])
-		if ipRange == "" {
-			continue
-		}
-		geoID = record[1]
-		if location, ok := locations[geoID]; ok {
-			database = append(database, GeoItem{
-				ID:          geoID,
-				City:        location.City,
-				Network:     ipRange,
-				TZ:          location.TZ,
-				Country:     location.Country,
-				CountryCode: location.CountryCode,
-			})
-		}
-	}
-	if len(database) < 1 {
-		return errors.New("Network db is empty")
-	}
-	sort.Sort(database)
-	maxmind.database = database
-	return nil
+		close(database)
+	}()
+	return database
 }
 
-func (maxmind *MaxMind) WriteMap() error {
+func (maxmind *MaxMind) WriteMap(locations map[string]GeoItem) error {
 	city, err := openMapFile(maxmind.OutputDir, "mm_city.txt")
 	if err != nil {
 		return err
@@ -166,7 +157,8 @@ func (maxmind *MaxMind) WriteMap() error {
 	}
 	defer city.Close()
 	defer tz.Close()
-	for _, location := range maxmind.database {
+
+	for location := range maxmind.parseNetwork(locations) {
 		var cityName string
 		var countryName string
 		if maxmind.noBase64 {

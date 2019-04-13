@@ -7,13 +7,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"sort"
 )
 
 type IPGeobase struct {
 	OutputDir  string
 	ErrorsChan chan Error
-	database   map[string]GeoItem
 	archive    []*zip.File
 }
 
@@ -74,27 +72,27 @@ func (ipgeobase *IPGeobase) Cities() (map[string]GeoItem, error) {
 	return cities, nil
 }
 
-func (ipgeobase *IPGeobase) Network(cities map[string]GeoItem) error {
-	database := make(map[string]GeoItem)
-	for record := range readCSVDatabase(ipgeobase.archive, "cidr_optim.txt", "IPGeobase", '\t', true) {
-		if len(record) < 5 {
-			printMessage("IPGeobase", fmt.Sprintf("cidr_optim.txt too short line: %s", record), "FAIL")
-			continue
+func (ipgeobase *IPGeobase) parseNetwork(cities map[string]GeoItem) <-chan GeoItem {
+	database := make(chan GeoItem)
+	go func() {
+		for record := range readCSVDatabase(ipgeobase.archive, "cidr_optim.txt", "IPGeobase", '\t', true) {
+			if len(record) < 5 {
+				printMessage("IPGeobase", fmt.Sprintf("cidr_optim.txt too short line: %s", record), "FAIL")
+				continue
+			}
+			// Format is: <int_start>\t<int_end>\t<ip_range>\t<country_code>\tcity_id
+			ipRange, country, cid := removeSpace(record[2]), record[3], record[4]
+			if info, ok := cities[cid]; country == "RU" && ok {
+				info.Network = ipRange
+				database <- info
+			}
 		}
-		// Format is: <int_start>\t<int_end>\t<ip_range>\t<country_code>\tcity_id
-		ipRange, country, cid := removeSpace(record[2]), record[3], record[4]
-		if city, ok := cities[cid]; country == "RU" && ok {
-			database[ipRange] = city
-		}
-	}
-	if len(database) < 1 {
-		return errors.New("Database is empty")
-	}
-	ipgeobase.database = database
-	return nil
+		close(database)
+	}()
+	return database
 }
 
-func (ipgeobase *IPGeobase) WriteMap() error {
+func (ipgeobase *IPGeobase) WriteMap(cities map[string]GeoItem) error {
 	reg, err := openMapFile(ipgeobase.OutputDir, "region.txt")
 	if err != nil {
 		return err
@@ -110,18 +108,11 @@ func (ipgeobase *IPGeobase) WriteMap() error {
 	defer reg.Close()
 	defer city.Close()
 	defer tz.Close()
-	ipRanges := make(IPList, len(ipgeobase.database))
-	i := 0
-	for ipRange := range ipgeobase.database {
-		ipRanges[i] = ipRange
-		i++
-	}
-	sort.Sort(ipRanges)
-	for _, ipRange := range ipRanges {
-		info := ipgeobase.database[ipRange]
-		fmt.Fprintf(city, "%s %s;\n", ipRange, base64.StdEncoding.EncodeToString([]byte(info.City)))
-		fmt.Fprintf(reg, "%s %02d;\n", ipRange, info.RegID)
-		fmt.Fprintf(tz, "%s %s;\n", ipRange, info.TZ)
+
+	for info := range ipgeobase.parseNetwork(cities) {
+		fmt.Fprintf(city, "%s %s;\n", info.Network, base64.StdEncoding.EncodeToString([]byte(info.City)))
+		fmt.Fprintf(reg, "%s %02d;\n", info.Network, info.RegID)
+		fmt.Fprintf(tz, "%s %s;\n", info.Network, info.TZ)
 	}
 	return nil
 }
