@@ -45,19 +45,19 @@ func printMessage(module, message, status string) {
 	var statusMesage string
 	switch status {
 	case "OK":
-		if LogLevel > 0 {
+		if logLevel > 0 {
 			return
 		}
 		statusMesage = color.GreenString(status)
 	case "WARN":
-		if LogLevel > 1 {
+		if logLevel > 1 {
 			return
 		}
 		statusMesage = color.YellowString(status)
 	case "FAIL":
 		statusMesage = color.RedString(status)
 	default:
-		if LogLevel > 1 {
+		if logLevel > 1 {
 			return
 		}
 		statusMesage = color.BlueString(status)
@@ -95,7 +95,7 @@ func int2ip(ipnr int64) net.IP {
 	return net.IPv4(bytes[3], bytes[2], bytes[1], bytes[0])
 }
 
-func readCSVDatabase(archive []*zip.File, filename string, dbType string, comma rune, windows_encoding bool) chan []string {
+func readCSVDatabase(archive []*zip.File, filename string, dbType string, comma rune, windowsEncoding bool) chan []string {
 	yield := make(chan []string)
 	go func() {
 		defer close(yield)
@@ -111,7 +111,7 @@ func readCSVDatabase(archive []*zip.File, filename string, dbType string, comma 
 		}
 		defer fp.Close()
 		var r *csv.Reader
-		if windows_encoding {
+		if windowsEncoding {
 			utf8, err := charset.NewReader(fp, "text/csv; charset=windows-1251")
 			if err != nil {
 				printMessage(dbType, fmt.Sprintf("%s not in cp1251", filename), "FAIL")
@@ -148,6 +148,7 @@ func convertTZToOffset(t time.Time, tz string) string {
 	return fmt.Sprintf("UTC%+d", offset/3600)
 }
 
+// Unpack zip file and return slice of zip.File`s
 func Unpack(response []byte) ([]*zip.File, error) {
 	zipReader, err := zip.NewReader(bytes.NewReader(response), int64(len(response)))
 	var file []*zip.File

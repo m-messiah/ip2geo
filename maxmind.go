@@ -13,8 +13,8 @@ import (
 	"time"
 )
 
+// MaxMind - GeoBase compatible generator for geolite.maxmind.com
 type MaxMind struct {
-	database   Database
 	archive    []*zip.File
 	OutputDir  string
 	ErrorsChan chan Error
@@ -27,15 +27,15 @@ type MaxMind struct {
 	noCountry  bool
 }
 
-func (maxmind *MaxMind) Name() string {
+func (maxmind *MaxMind) name() string {
 	return "MaxMind"
 }
 
-func (maxmind *MaxMind) AddError(err Error) {
+func (maxmind *MaxMind) addError(err Error) {
 	maxmind.ErrorsChan <- err
 }
 
-func (maxmind *MaxMind) Download() ([]byte, error) {
+func (maxmind *MaxMind) download() ([]byte, error) {
 	resp, err := http.Get("http://geolite.maxmind.com/download/geoip/database/GeoLite2-City-CSV.zip")
 	if err != nil {
 		return nil, err
@@ -48,7 +48,7 @@ func (maxmind *MaxMind) Download() ([]byte, error) {
 	return answer, nil
 }
 
-func (maxmind *MaxMind) Unpack(response []byte) error {
+func (maxmind *MaxMind) unpack(response []byte) error {
 	file, err := Unpack(response)
 	if err == nil {
 		maxmind.archive = file
@@ -56,42 +56,42 @@ func (maxmind *MaxMind) Unpack(response []byte) error {
 	return err
 }
 
-func (maxmind *MaxMind) lineToItem(record []string, currentTime time.Time) (*string, *GeoItem, error, string) {
+func (maxmind *MaxMind) lineToItem(record []string, currentTime time.Time) (*string, *geoItem, string, error) {
 	if len(record) < 13 {
-		return nil, nil, errors.New("too short line"), "FAIL"
+		return nil, nil, "FAIL", errors.New("too short line")
 	}
 	countryCode := record[4]
 	if len(countryCode) < 1 || len(record[5]) < 1 {
-		return nil, nil, errors.New("too short country"), ""
+		return nil, nil, "", errors.New("too short country")
 	}
 	if len(maxmind.include) > 1 && !strings.Contains(maxmind.include, countryCode) {
-		return nil, nil, errors.New("country skipped"), ""
+		return nil, nil, "", errors.New("country skipped")
 	}
 	if strings.Contains(maxmind.exclude, countryCode) {
-		return nil, nil, errors.New("country excluded"), ""
+		return nil, nil, "", errors.New("country excluded")
 	}
 	tz := record[12]
 	if !maxmind.tzNames {
 		tz = convertTZToOffset(currentTime, record[12])
 	}
 	if len(record[10]) < 1 {
-		return nil, nil, errors.New("too short city name"), ""
+		return nil, nil, "", errors.New("too short city name")
 	}
-	return &record[0], &GeoItem{
+	return &record[0], &geoItem{
 		ID:          record[0],
 		City:        record[10],
 		TZ:          tz,
 		CountryCode: record[4],
 		Country:     record[5],
-	}, nil, ""
+	}, "", nil
 }
 
-func (maxmind *MaxMind) Cities() (map[string]GeoItem, error) {
-	locations := make(map[string]GeoItem)
+func (maxmind *MaxMind) citiesDB() (map[string]geoItem, error) {
+	locations := make(map[string]geoItem)
 	currentTime := time.Now()
 	filename := "GeoLite2-City-Locations-" + maxmind.lang + ".csv"
 	for record := range readCSVDatabase(maxmind.archive, filename, "MaxMind", ',', false) {
-		key, location, err, severity := maxmind.lineToItem(record, currentTime)
+		key, location, severity, err := maxmind.lineToItem(record, currentTime)
 		if err != nil {
 			if len(severity) > 0 {
 				printMessage("MaxMind", fmt.Sprintf(filename+" %v", err), severity)
@@ -106,8 +106,8 @@ func (maxmind *MaxMind) Cities() (map[string]GeoItem, error) {
 	return locations, nil
 }
 
-func (maxmind *MaxMind) parseNetwork(locations map[string]GeoItem) <-chan GeoItem {
-	database := make(chan GeoItem)
+func (maxmind *MaxMind) parseNetwork(locations map[string]geoItem) <-chan geoItem {
+	database := make(chan geoItem)
 	go func() {
 		var ipRange string
 		var geoID string
@@ -132,7 +132,7 @@ func (maxmind *MaxMind) parseNetwork(locations map[string]GeoItem) <-chan GeoIte
 	return database
 }
 
-func (maxmind *MaxMind) WriteMap(locations map[string]GeoItem) error {
+func (maxmind *MaxMind) writeMap(locations map[string]geoItem) error {
 	city, err := openMapFile(maxmind.OutputDir, "mm_city.txt")
 	if err != nil {
 		return err

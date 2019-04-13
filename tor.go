@@ -10,23 +10,25 @@ import (
 	"strings"
 )
 
+// Tor network lists DB
 type Tor struct {
 	OutputDir  string
 	ErrorsChan chan Error
 	list       IPList
-	temp_lists chan map[string]bool
+	tempLists  chan map[string]bool
 }
 
+// Generate Tor maps for nginx (download, parse, merge, write)
 func (tor *Tor) Generate() {
-	tor.temp_lists = make(chan map[string]bool, 2)
-	go tor.BlutmagieDownload()
-	go tor.TorProjectDownload()
-	if err := tor.Merge(); err != nil {
+	tor.tempLists = make(chan map[string]bool, 2)
+	go tor.blutmagieDownload()
+	go tor.torProjectDownload()
+	if err := tor.merge(); err != nil {
 		tor.ErrorsChan <- Error{err, "TOR", "Merge"}
 		return
 	}
 	printMessage("TOR", "Merge", "OK")
-	if err := tor.WriteMap(); err != nil {
+	if err := tor.writeMap(); err != nil {
 		tor.ErrorsChan <- Error{err, "TOR", "nginx"}
 		return
 	}
@@ -34,11 +36,11 @@ func (tor *Tor) Generate() {
 	tor.ErrorsChan <- Error{err: nil}
 }
 
-func (tor *Tor) BlutmagieDownload() {
+func (tor *Tor) blutmagieDownload() {
 	resp, err := http.Get("https://torstatus.blutmagie.de/ip_list_exit.php/Tor_ip_list_EXIT.csv")
 	if err != nil {
 		printMessage("TOR", "Blutmagie Download", "FAIL")
-		tor.temp_lists <- nil
+		tor.tempLists <- nil
 		return
 	}
 	defer resp.Body.Close()
@@ -60,14 +62,14 @@ func (tor *Tor) BlutmagieDownload() {
 		torlist[strings.TrimSpace(line)] = true
 	}
 	printMessage("TOR", "Blutmagie Download", "OK")
-	tor.temp_lists <- torlist
+	tor.tempLists <- torlist
 }
 
-func (tor *Tor) TorProjectDownload() {
+func (tor *Tor) torProjectDownload() {
 	resp, err := http.Get("https://check.torproject.org/exit-addresses")
 	if err != nil {
 		printMessage("TOR", "Torproject Download", "FAIL")
-		tor.temp_lists <- nil
+		tor.tempLists <- nil
 		return
 	}
 	defer resp.Body.Close()
@@ -92,13 +94,13 @@ func (tor *Tor) TorProjectDownload() {
 		torproject[fields[1]] = true
 	}
 	printMessage("TOR", "Torproject Download", "OK")
-	tor.temp_lists <- torproject
+	tor.tempLists <- torproject
 }
 
-func (tor *Tor) Merge() error {
+func (tor *Tor) merge() error {
 	result := make(map[string]bool)
 	for i := 0; i < 2; i++ {
-		m := <-tor.temp_lists
+		m := <-tor.tempLists
 		if m == nil {
 			continue
 		}
@@ -120,14 +122,14 @@ func (tor *Tor) Merge() error {
 	return errors.New("torlist empty")
 }
 
-func (tor *Tor) WriteMap() error {
-	tor_file, err := openMapFile(tor.OutputDir, "tor.txt")
+func (tor *Tor) writeMap() error {
+	torFile, err := openMapFile(tor.OutputDir, "tor.txt")
 	if err != nil {
 		return err
 	}
-	defer tor_file.Close()
+	defer torFile.Close()
 	for _, ip := range tor.list {
-		fmt.Fprintf(tor_file, "%s-%s 1;\n", ip, ip)
+		fmt.Fprintf(torFile, "%s-%s 1;\n", ip, ip)
 	}
 	return nil
 
