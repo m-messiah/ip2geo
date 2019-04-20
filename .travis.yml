@@ -13,6 +13,10 @@ script:
   - go build -o ip2geo
   - ./ip2geo
   - TEST_NGINX_IP2GEO_DIR=$PWD prove t/nginx_geo.t
+  - ./ip2geo -lang en -nobase64
+  - TEST_NGINX_IP2GEO_DIR=$PWD prove t/nginx_geo.t
+  - ./ip2geo -ipver 6
+  - TEST_NGINX_IP2GEO_DIR=$PWD prove t/nginx_geo_ipv6.t
   - ./ip2geo -ipver 6 -lang en -nobase64
   - TEST_NGINX_IP2GEO_DIR=$PWD prove t/nginx_geo_ipv6.t
 after_success:
@@ -20,7 +24,7 @@ after_success:
   - GOOS=freebsd go build -o ip2geo-freebsd
   - GOOS=linux GOARCH=386 go build -o ip2geo-linux32
   - GOOS=linux GOARCH=amd64 go build -o ip2geo-linux64
-  - GOOS=linux GOARCH=arm  go build -o ip2geo-linuxARM
+  - GOOS=linux GOARCH=arm go build -o ip2geo-linuxARM
   - GOOS=openbsd go build -o ip2geo-openbsd
 deploy:
   provider: releases

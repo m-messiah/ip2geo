@@ -162,8 +162,8 @@ func (maxmind *MaxMind) writeMap(locations map[string]geoItem) error {
 		var cityName string
 		var countryName string
 		if maxmind.noBase64 {
-			cityName = "\"" + location.City + "\""
-			countryName = "\"" + location.Country + "\""
+			cityName = "\"" + strings.Replace(location.City, "\"", "\\\"", -1) + "\""
+			countryName = "\"" + strings.Replace(location.Country, "\"", "\\\"", -1) + "\""
 		} else {
 			cityName = base64.StdEncoding.EncodeToString([]byte(location.City))
 			countryName = base64.StdEncoding.EncodeToString([]byte(location.Country))
