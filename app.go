@@ -11,8 +11,9 @@ func main() {
 	outputDir := flag.String("output", "output", "output directory for files")
 	ipgeobase := flag.Bool("ipgeobase", false, "enable ipgeobase generation")
 	tor := flag.Bool("tor", false, "enable tor generation")
-	ip2proxyFlag := flag.Bool("ip2proxy", false, "enable ip2proxy generation")
+	ip2proxyLiteFlag := flag.Bool("ip2proxy", false, "enable ip2proxy PX4-LITE generation")
 	ip2proxyToken := flag.String("ip2proxy-token", "", "Get token here https://lite.ip2location.com/file-download")
+	ip2proxyFilename := flag.String("ip2proxy-filename", "", "Filename of already downloaded ip2proxy db (no lite)")
 	maxmind := flag.Bool("maxmind", false, "enable maxmind generation")
 	maxmindIPVer := flag.Int("ipver", 4, "MaxMind ip version (4 or 6)")
 	maxmindLang := flag.String("lang", "ru", "MaxMind city name language")
@@ -24,12 +25,12 @@ func main() {
 	quiet := flag.Bool("q", false, "Be quiet - skip [OK]")
 	veryQuiet := flag.Bool("qq", false, "Be very quiet - show only errors")
 	flag.Parse()
-	if !(*ipgeobase || *tor || *maxmind || *ip2proxyFlag) {
+	if !(*ipgeobase || *tor || *maxmind || *ip2proxyLiteFlag || len(*ip2proxyFilename) > 0) {
 		// By default, generate all maps
 		*ipgeobase = true
 		*tor = true
 		*maxmind = true
-		*ip2proxyFlag = *ip2proxyToken != ""
+		*ip2proxyLiteFlag = *ip2proxyToken != ""
 	}
 	if *quiet {
 		logLevel = 1
@@ -77,10 +78,20 @@ func main() {
 		go Generate(&m)
 	}
 
-	if *ip2proxyFlag {
+	if *ip2proxyLiteFlag {
 		goroutinesCount++
 		o := ip2proxy{
 			Token:      *ip2proxyToken,
+			ErrorsChan: errorChannel,
+			OutputDir:  *outputDir,
+		}
+		go o.Get()
+	}
+
+	if len(*ip2proxyFilename) > 0 {
+		goroutinesCount++
+		o := ip2proxy{
+			Filename:   *ip2proxyFilename,
 			ErrorsChan: errorChannel,
 			OutputDir:  *outputDir,
 		}
