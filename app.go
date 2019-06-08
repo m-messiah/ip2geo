@@ -23,7 +23,12 @@ func main() {
 	maxmindNoCountry := flag.Bool("nocountry", false, "do not add maxmind country maps")
 	quiet := flag.Bool("q", false, "Be quiet - skip [OK]")
 	veryQuiet := flag.Bool("qq", false, "Be very quiet - show only errors")
+	version := flag.Bool("version", false, "Print version information and exit")
 	flag.Parse()
+	if *version {
+		printMessage("ip2geo", "version "+VERSION, "OK")
+		return
+	}
 	if !(*ipgeobase || *tor || *maxmind || *ip2proxyFlag) {
 		// By default, generate all maps
 		*ipgeobase = true
