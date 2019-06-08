@@ -2,6 +2,7 @@ package main
 
 import (
 	"archive/zip"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -23,36 +24,57 @@ type ip2proxyItem struct {
 }
 
 type ip2proxy struct {
-	items      []*ip2proxyItem
-	archive    []*zip.File
-	OutputDir  string
-	ErrorsChan chan Error
-	Token      string
+	items       []*ip2proxyItem
+	archive     []*zip.File
+	OutputDir   string
+	ErrorsChan  chan Error
+	Token       string
+	Filename    string
+	name        string
+	csvFilename string
+}
+
+func (o *ip2proxy) checkErr(err error, message string) bool {
+	if err != nil {
+		o.ErrorsChan <- Error{err, o.name, message}
+		return true
+	}
+	printMessage(o.name, message, "OK")
+	return false
 }
 
 func (o *ip2proxy) Get() {
-	answer, err := o.download()
-	if err != nil {
-		o.ErrorsChan <- Error{err, "ip2proxy", "Download"}
+	fileData, err := o.getZip()
+	if o.checkErr(err, "Get ZIP") {
 		return
 	}
-	printMessage("ip2proxy", "Download", "OK")
-	if err := o.unpack(answer); err != nil {
-		o.ErrorsChan <- Error{err, "ip2proxy", "Unpack"}
+	err = o.unpack(fileData)
+	if o.checkErr(err, "Unpack") {
 		return
 	}
-	printMessage("ip2proxy", "Unpack", "OK")
-	if err := o.Parse("IP2PROXY-LITE-PX4.CSV"); err != nil {
-		o.ErrorsChan <- Error{err, "ip2proxy", "Parse"}
+	err = o.Parse(o.csvFilename)
+	if o.checkErr(err, "Parse") {
 		return
 	}
-	printMessage("ip2proxy", "Parse", "OK")
-	if err := o.Write(); err != nil {
-		o.ErrorsChan <- Error{err, "ip2proxy", "Write Nginx Map"}
+	err = o.Write()
+	if o.checkErr(err, "Write Nginx Map") {
 		return
 	}
-	printMessage("ip2proxy", "Write Nginx Map", "OK")
 	o.ErrorsChan <- Error{err: nil}
+}
+
+func (o *ip2proxy) getZip() ([]byte, error) {
+	if len(o.Token) > 0 {
+		o.name = "ip2proxy"
+		o.csvFilename = "IP2PROXY-LITE-PX4.CSV"
+		return o.download()
+	} else if len(o.Filename) > 0 {
+		o.name = "ip2proxyPro"
+		o.csvFilename = "IP2PROXY-IP-PROXYTYPE-COUNTRY-REGION-CITY-ISP.CSV"
+		return ioutil.ReadFile(o.Filename)
+	} else {
+		return nil, errors.New("Token or Filename must be passed")
+	}
 }
 
 func (o *ip2proxy) download() ([]byte, error) {
@@ -87,10 +109,10 @@ func (o *ip2proxy) unpack(response []byte) error {
 
 func (o *ip2proxy) Parse(filename string) error {
 	var list []*ip2proxyItem
-	for record := range readCSVDatabase(o.archive, filename, "ip2proxy", ',', false) {
+	for record := range readCSVDatabase(o.archive, filename, o.name, ',', false) {
 		item, err := o.lineToItem(record)
 		if err != nil {
-			printMessage("ip2proxy", fmt.Sprintf("Can't parse line from %s with %v", filename, err), "WARN")
+			printMessage(o.name, fmt.Sprintf("Can't parse line from %s with %v", filename, err), "WARN")
 			continue
 		}
 		list = append(list, item)
@@ -130,7 +152,7 @@ func (o *ip2proxy) Write() error {
 }
 
 func (o *ip2proxy) writeNetworks() error {
-	file, err := os.Create(path.Join(o.OutputDir, "ip2proxy_net.txt"))
+	file, err := os.Create(path.Join(o.OutputDir, o.name+"_net.txt"))
 	if err != nil {
 		return err
 	}
