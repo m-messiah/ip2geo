@@ -12,6 +12,7 @@ before_install:
   - echo "const VERSION = \"${TRAVIS_TAG}\"" >> version.go
 script:
   - go build -o ip2geo
+  - ./ip2geo -version
   - ./ip2geo
   - TEST_NGINX_IP2GEO_DIR=$PWD prove t/nginx_geo.t
   - ./ip2geo -lang en -nobase64
