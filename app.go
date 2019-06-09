@@ -91,7 +91,7 @@ func main() {
 	if *ip2proxyLiteFlag {
 		goroutinesCount++
 		o := ip2proxy{
-			Type:       IP2PROXY_LITE,
+			Name:       "ip2proxyLite",
 			Token:      *ip2proxyLiteToken,
 			Filename:   *ip2proxyLiteFilename,
 			ErrorsChan: errorChannel,
@@ -104,7 +104,7 @@ func main() {
 	if *ip2proxyFlag {
 		goroutinesCount++
 		o := ip2proxy{
-			Type:       IP2PROXY_PRO,
+			Name:       "ip2proxyPro",
 			Token:      *ip2proxyToken,
 			Filename:   *ip2proxyFilename,
 			ErrorsChan: errorChannel,
