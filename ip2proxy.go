@@ -12,6 +12,11 @@ import (
 	"strconv"
 )
 
+const (
+	IP2PROXY_PRO = iota
+	IP2PROXY_LITE
+)
+
 type ip2proxyItem struct {
 	IPFrom      net.IP
 	IPTo        net.IP
@@ -24,6 +29,7 @@ type ip2proxyItem struct {
 }
 
 type ip2proxy struct {
+	Type        int
 	items       []*ip2proxyItem
 	archive     []*zip.File
 	OutputDir   string
@@ -32,6 +38,8 @@ type ip2proxy struct {
 	Filename    string
 	name        string
 	csvFilename string
+	zipFilename string
+	PrintType   bool
 }
 
 func (o *ip2proxy) checkErr(err error, message string) bool {
@@ -44,6 +52,18 @@ func (o *ip2proxy) checkErr(err error, message string) bool {
 }
 
 func (o *ip2proxy) Get() {
+	if o.Type == IP2PROXY_PRO {
+		o.name = "ip2proxyPro"
+		o.csvFilename = "IP2PROXY-IP-PROXYTYPE-COUNTRY-REGION-CITY-ISP.CSV"
+		o.zipFilename = "PX4-IP-PROXYTYPE-COUNTRY-REGION-CITY-ISP"
+	} else if o.Type == IP2PROXY_LITE {
+		o.name = "ip2proxyLite"
+		o.csvFilename = "IP2PROXY-LITE-PX4.CSV"
+		o.zipFilename = "PX4LITE"
+	} else {
+		o.ErrorsChan <- Error{errors.New("Unknown ip2proxy type requested"), o.name, "bad init"}
+		return
+	}
 	fileData, err := o.getZip()
 	if o.checkErr(err, "Get ZIP") {
 		return
@@ -65,12 +85,8 @@ func (o *ip2proxy) Get() {
 
 func (o *ip2proxy) getZip() ([]byte, error) {
 	if len(o.Token) > 0 {
-		o.name = "ip2proxy"
-		o.csvFilename = "IP2PROXY-LITE-PX4.CSV"
 		return o.download()
 	} else if len(o.Filename) > 0 {
-		o.name = "ip2proxyPro"
-		o.csvFilename = "IP2PROXY-IP-PROXYTYPE-COUNTRY-REGION-CITY-ISP.CSV"
 		return ioutil.ReadFile(o.Filename)
 	} else {
 		return nil, errors.New("Token or Filename must be passed")
@@ -81,7 +97,7 @@ func (o *ip2proxy) download() ([]byte, error) {
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", "https://www.ip2location.com/download", nil)
 	q := req.URL.Query()
-	q.Add("file", "PX4LITE")
+	q.Add("file", o.zipFilename)
 	q.Add("token", o.Token)
 	req.URL.RawQuery = q.Encode()
 	resp, err := client.Do(req)
@@ -157,8 +173,14 @@ func (o *ip2proxy) writeNetworks() error {
 		return err
 	}
 	defer file.Close()
+	var mapValue string
 	for _, item := range o.items {
-		fmt.Fprintf(file, "%s-%s 1;\n", item.IPFrom, item.IPTo)
+		if o.PrintType {
+			mapValue = item.ProxyType
+		} else {
+			mapValue = "1"
+		}
+		fmt.Fprintf(file, "%s-%s \"%s\";\n", item.IPFrom, item.IPTo, mapValue)
 	}
 	return nil
 }
