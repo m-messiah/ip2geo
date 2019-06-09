@@ -12,8 +12,12 @@ func main() {
 	ipgeobase := flag.Bool("ipgeobase", false, "enable ipgeobase generation")
 	tor := flag.Bool("tor", false, "enable tor generation")
 	ip2proxyLiteFlag := flag.Bool("ip2proxy", false, "enable ip2proxy PX4-LITE generation")
-	ip2proxyToken := flag.String("ip2proxy-token", "", "Get token here https://lite.ip2location.com/file-download")
-	ip2proxyFilename := flag.String("ip2proxy-filename", "", "Filename of already downloaded ip2proxy db (no lite)")
+	ip2proxyFlag := flag.Bool("ip2proxy-pro", false, "enable ip2proxy PX4 generation")
+	ip2proxyLiteToken := flag.String("ip2proxy-token", "", "Get token here https://lite.ip2location.com/file-download")
+	ip2proxyToken := flag.String("ip2proxy-pro-token", "", "ip2proxy download token")
+	ip2proxyLiteFilename := flag.String("ip2proxy-lite-filename", "", "Filename of already downloaded ip2proxy-lite db")
+	ip2proxyFilename := flag.String("ip2proxy-pro-filename", "", "Filename of already downloaded ip2proxy db")
+	ip2proxyPrintType := flag.Bool("ip2proxy-print-type", false, "Print proxy type in map, instead of `1`")
 	maxmind := flag.Bool("maxmind", false, "enable maxmind generation")
 	maxmindIPVer := flag.Int("ipver", 4, "MaxMind ip version (4 or 6)")
 	maxmindLang := flag.String("lang", "ru", "MaxMind city name language")
@@ -25,12 +29,13 @@ func main() {
 	quiet := flag.Bool("q", false, "Be quiet - skip [OK]")
 	veryQuiet := flag.Bool("qq", false, "Be very quiet - show only errors")
 	flag.Parse()
-	if !(*ipgeobase || *tor || *maxmind || *ip2proxyLiteFlag || len(*ip2proxyFilename) > 0) {
+	if !(*ipgeobase || *tor || *maxmind || *ip2proxyLiteFlag || *ip2proxyFlag) {
 		// By default, generate all maps
 		*ipgeobase = true
 		*tor = true
 		*maxmind = true
-		*ip2proxyLiteFlag = *ip2proxyToken != ""
+		*ip2proxyLiteFlag = *ip2proxyLiteToken != "" || *ip2proxyLiteFilename != ""
+		*ip2proxyFlag = *ip2proxyToken != "" || *ip2proxyFilename != ""
 	}
 	if *quiet {
 		logLevel = 1
@@ -81,19 +86,25 @@ func main() {
 	if *ip2proxyLiteFlag {
 		goroutinesCount++
 		o := ip2proxy{
-			Token:      *ip2proxyToken,
+			Type:       IP2PROXY_LITE,
+			Token:      *ip2proxyLiteToken,
+			Filename:   *ip2proxyLiteFilename,
 			ErrorsChan: errorChannel,
 			OutputDir:  *outputDir,
+			PrintType:  *ip2proxyPrintType,
 		}
 		go o.Get()
 	}
 
-	if len(*ip2proxyFilename) > 0 {
+	if *ip2proxyFlag {
 		goroutinesCount++
 		o := ip2proxy{
+			Type:       IP2PROXY_PRO,
+			Token:      *ip2proxyToken,
 			Filename:   *ip2proxyFilename,
 			ErrorsChan: errorChannel,
 			OutputDir:  *outputDir,
+			PrintType:  *ip2proxyPrintType,
 		}
 		go o.Get()
 	}
