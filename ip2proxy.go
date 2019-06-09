@@ -12,11 +12,6 @@ import (
 	"strconv"
 )
 
-const (
-	IP2PROXY_PRO = iota
-	IP2PROXY_LITE
-)
-
 type ip2proxyItem struct {
 	IPFrom      net.IP
 	IPTo        net.IP
@@ -29,14 +24,13 @@ type ip2proxyItem struct {
 }
 
 type ip2proxy struct {
-	Type        int
 	items       []*ip2proxyItem
 	archive     []*zip.File
 	OutputDir   string
 	ErrorsChan  chan Error
 	Token       string
 	Filename    string
-	name        string
+	Name        string
 	csvFilename string
 	zipFilename string
 	PrintType   bool
@@ -44,24 +38,22 @@ type ip2proxy struct {
 
 func (o *ip2proxy) checkErr(err error, message string) bool {
 	if err != nil {
-		o.ErrorsChan <- Error{err, o.name, message}
+		o.ErrorsChan <- Error{err, o.Name, message}
 		return true
 	}
-	printMessage(o.name, message, "OK")
+	printMessage(o.Name, message, "OK")
 	return false
 }
 
 func (o *ip2proxy) Get() {
-	if o.Type == IP2PROXY_PRO {
-		o.name = "ip2proxyPro"
+	if o.Name == "ip2proxyPro" {
 		o.csvFilename = "IP2PROXY-IP-PROXYTYPE-COUNTRY-REGION-CITY-ISP.CSV"
 		o.zipFilename = "PX4-IP-PROXYTYPE-COUNTRY-REGION-CITY-ISP"
-	} else if o.Type == IP2PROXY_LITE {
-		o.name = "ip2proxyLite"
+	} else if o.Name == "ip2proxyLite" {
 		o.csvFilename = "IP2PROXY-LITE-PX4.CSV"
 		o.zipFilename = "PX4LITE"
 	} else {
-		o.ErrorsChan <- Error{errors.New("Unknown ip2proxy type requested"), o.name, "bad init"}
+		o.ErrorsChan <- Error{errors.New("Unknown ip2proxy type requested"), o.Name, "bad init"}
 		return
 	}
 	fileData, err := o.getZip()
@@ -125,10 +117,10 @@ func (o *ip2proxy) unpack(response []byte) error {
 
 func (o *ip2proxy) Parse(filename string) error {
 	var list []*ip2proxyItem
-	for record := range readCSVDatabase(o.archive, filename, o.name, ',', false) {
+	for record := range readCSVDatabase(o.archive, filename, o.Name, ',', false) {
 		item, err := o.lineToItem(record)
 		if err != nil {
-			printMessage(o.name, fmt.Sprintf("Can't parse line from %s with %v", filename, err), "WARN")
+			printMessage(o.Name, fmt.Sprintf("Can't parse line from %s with %v", filename, err), "WARN")
 			continue
 		}
 		list = append(list, item)
@@ -168,7 +160,7 @@ func (o *ip2proxy) Write() error {
 }
 
 func (o *ip2proxy) writeNetworks() error {
-	file, err := os.Create(path.Join(o.OutputDir, o.name+"_net.txt"))
+	file, err := os.Create(path.Join(o.OutputDir, o.Name+"_net.txt"))
 	if err != nil {
 		return err
 	}
