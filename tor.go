@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"sort"
 	"strings"
+	"time"
 )
 
 // Tor network lists DB
@@ -66,7 +67,8 @@ func (tor *Tor) blutmagieDownload() {
 }
 
 func (tor *Tor) torProjectDownload() {
-	resp, err := http.Get("https://check.torproject.org/exit-addresses")
+	client := &http.Client{Timeout: time.Second * 30}
+	resp, err := client.Get("https://check.torproject.org/exit-addresses")
 	if err != nil {
 		printMessage("TOR", "Torproject Download", "FAIL")
 		tor.tempLists <- nil
