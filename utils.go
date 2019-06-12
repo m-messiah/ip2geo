@@ -62,7 +62,7 @@ func printMessage(module, message, status string) {
 		}
 		statusMesage = color.BlueString(status)
 	}
-	fmt.Printf("%-10s | %-60s [%s]\n", module, message, statusMesage)
+	fmt.Printf("%-15s | %-60s [%s]\n", module, message, statusMesage)
 }
 
 func getIPRange(ipver int, network string) string {
