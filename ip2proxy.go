@@ -48,7 +48,7 @@ func (o *ip2proxy) checkErr(err error, message string) bool {
 func (o *ip2proxy) Get() {
 	if o.Name == "ip2proxyPro" {
 		o.csvFilename = "IP2PROXY-IP-PROXYTYPE-COUNTRY-REGION-CITY-ISP.CSV"
-		o.zipFilename = "PX4-IP-PROXYTYPE-COUNTRY-REGION-CITY-ISP"
+		o.zipFilename = "PX4"
 	} else if o.Name == "ip2proxyLite" {
 		o.csvFilename = "IP2PROXY-LITE-PX4.CSV"
 		o.zipFilename = "PX4LITE"
