@@ -1,0 +1,25 @@
+---
+loglevel: 0
+outputdir: "output"
+tor:
+  enabled: true
+ip2proxy:
+  printtype: true
+  lite:
+    enabled: false
+    filename: PX4LITE.ZIP
+  pro:
+    enabled: false
+    token: "1234567890"
+maxmind:
+  enabled: true
+  lang: en
+  ipver: 6
+  nobase64: true
+  tznames: false
+  nocountry: false
+  include: RU,EN,JP
+  exclude: US
+ipgeobase:
+  enabled: true
+
