@@ -18,13 +18,7 @@ type MaxMind struct {
 	archive    []*zip.File
 	OutputDir  string
 	ErrorsChan chan Error
-	lang       string
-	ipver      int
-	tzNames    bool
-	include    string
-	exclude    string
-	noBase64   bool
-	noCountry  bool
+	maxMindConfig
 }
 
 func (maxmind *MaxMind) name() string {
@@ -64,14 +58,14 @@ func (maxmind *MaxMind) lineToItem(record []string, currentTime time.Time) (*str
 	if len(countryCode) < 1 || len(record[5]) < 1 {
 		return nil, nil, "", errors.New("too short country")
 	}
-	if len(maxmind.include) > 1 && !strings.Contains(maxmind.include, countryCode) {
+	if len(maxmind.Include) > 1 && !strings.Contains(maxmind.Include, countryCode) {
 		return nil, nil, "", errors.New("country skipped")
 	}
-	if strings.Contains(maxmind.exclude, countryCode) {
-		return nil, nil, "", errors.New("country excluded")
+	if strings.Contains(maxmind.Exclude, countryCode) {
+		return nil, nil, "", errors.New("country Excluded")
 	}
 	tz := record[12]
-	if !maxmind.tzNames {
+	if !maxmind.TZNames {
 		tz = convertTZToOffset(currentTime, record[12])
 	}
 	if len(record[10]) < 1 {
@@ -89,7 +83,7 @@ func (maxmind *MaxMind) lineToItem(record []string, currentTime time.Time) (*str
 func (maxmind *MaxMind) citiesDB() (map[string]geoItem, error) {
 	locations := make(map[string]geoItem)
 	currentTime := time.Now()
-	filename := "GeoLite2-City-Locations-" + maxmind.lang + ".csv"
+	filename := "GeoLite2-City-Locations-" + maxmind.Lang + ".csv"
 	for record := range readCSVDatabase(maxmind.archive, filename, "MaxMind", ',', false) {
 		key, location, severity, err := maxmind.lineToItem(record, currentTime)
 		if err != nil {
@@ -111,13 +105,13 @@ func (maxmind *MaxMind) parseNetwork(locations map[string]geoItem) <-chan geoIte
 	go func() {
 		var ipRange string
 		var geoID string
-		filename := "GeoLite2-City-Blocks-IPv" + strconv.Itoa(maxmind.ipver) + ".csv"
+		filename := "GeoLite2-City-Blocks-IPv" + strconv.Itoa(maxmind.IPVer) + ".csv"
 		for record := range readCSVDatabase(maxmind.archive, filename, "MaxMind", ',', false) {
 			if len(record) < 2 {
 				printMessage("MaxMind", fmt.Sprintf(filename+" too short line: %s", record), "FAIL")
 				continue
 			}
-			ipRange = getIPRange(maxmind.ipver, record[0])
+			ipRange = getIPRange(maxmind.IPVer, record[0])
 			if ipRange == "" {
 				continue
 			}
@@ -143,7 +137,7 @@ func (maxmind *MaxMind) writeMap(locations map[string]geoItem) error {
 	}
 	var country *os.File
 	var countryCode *os.File
-	if !maxmind.noCountry {
+	if !maxmind.NoCountry {
 		country, err = openMapFile(maxmind.OutputDir, "mm_country.txt")
 		if err != nil {
 			return err
@@ -161,7 +155,7 @@ func (maxmind *MaxMind) writeMap(locations map[string]geoItem) error {
 	for location := range maxmind.parseNetwork(locations) {
 		var cityName string
 		var countryName string
-		if maxmind.noBase64 {
+		if maxmind.NoBase64 {
 			cityName = "\"" + strings.Replace(location.City, "\"", "\\\"", -1) + "\""
 			countryName = "\"" + strings.Replace(location.Country, "\"", "\\\"", -1) + "\""
 		} else {
@@ -171,7 +165,7 @@ func (maxmind *MaxMind) writeMap(locations map[string]geoItem) error {
 
 		fmt.Fprintf(city, "%s %s;\n", location.Network, cityName)
 		fmt.Fprintf(tz, "%s %s;\n", location.Network, location.TZ)
-		if !maxmind.noCountry {
+		if !maxmind.NoCountry {
 			fmt.Fprintf(country, "%s %s;\n", location.Network, countryName)
 			fmt.Fprintf(countryCode, "%s %s;\n", location.Network, location.CountryCode)
 		}
