@@ -22,14 +22,25 @@
         Директория для записи map-файлов (по умолчанию: "output")
     -q  Be quiet - skip [OK]
     -qq Be very quiet - show only errors
+    -version Вывести текущую версию программы и выйти.
     -ipgeobase
         Генерация IPgeobase баз (название города, код региона, часовой пояс)
     -tor
         Генерация списков TOR нод.
     -ip2proxy
-        Генерация ip2proxy сетей
+        Генерация ip2proxy PX4LITE сетей
     -ip2proxy-token string
-        Токен для скачивания ip2proxy баз https://lite.ip2location.com/file-download
+        Токен для скачивания ip2proxy PX4LITE баз https://lite.ip2location.com/file-download
+    -ip2proxy-lite-filename string
+        Путь до уже скачанного zip файла PX4LITE
+    -ip2proxy-pro
+        Генерация ip2proxy PX4 сетей
+    -ip2proxy-pro-token string
+        Токен для скачивания ip2proxy PX4
+    -ip2proxy-pro-filename string
+        Путь до уже скачанного zip файла PX4
+    -ip2proxy-print-type
+        Вместо 1 указывать тип прокси из ip2proxy (PUB/DCH/e.t.c.)
     -maxmind
         Генерация баз MaxMind (название города, часовой пояс)
     Дальше параметры для MaxMind:
