@@ -7,35 +7,35 @@ import (
 )
 
 type ip2ProxyConfig struct {
-	Enabled  bool `default:false`
+	Enabled  bool `default:"false"`
 	Token    string
 	Filename string
 }
 
 // Config - all configuration for tool defined here
 var Config = struct {
-	LogLevel  int    `default:0`
+	LogLevel  int    `default:"0"`
 	OutputDir string `default:"output"`
 	TOR       struct {
-		Enabled bool `default:false`
+		Enabled bool `default:"false"`
 	}
 	IP2Proxy struct {
 		Lite      ip2ProxyConfig
 		Pro       ip2ProxyConfig
-		PrintType bool `default:false`
+		PrintType bool `default:"false"`
 	}
 	MaxMind struct {
-		Enabled   bool   `default:false`
-		IPVer     int    `default:4`
+		Enabled   bool   `default:"false"`
+		IPVer     int    `default:"4"`
 		Lang      string `default:"ru"`
-		TZNames   bool   `default:false`
+		TZNames   bool   `default:"false"`
 		Include   string
 		Exclude   string
-		NoBase64  bool `default:false`
-		NoCountry bool `default:false`
+		NoBase64  bool `default:"false"`
+		NoCountry bool `default:"false"`
 	}
 	IPGeobase struct {
-		Enabled bool `default:false`
+		Enabled bool `default:"false"`
 	}
 }{}
 
