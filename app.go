@@ -12,6 +12,17 @@ type ip2ProxyConfig struct {
 	Filename string
 }
 
+type maxMindConfig struct {
+	Enabled   bool   `default:"false"`
+	IPVer     int    `default:"4"`
+	Lang      string `default:"ru"`
+	TZNames   bool   `default:"false"`
+	Include   string
+	Exclude   string
+	NoBase64  bool `default:"false"`
+	NoCountry bool `default:"false"`
+}
+
 // Config - all configuration for tool defined here
 var Config = struct {
 	LogLevel  int    `default:"0"`
@@ -24,22 +35,13 @@ var Config = struct {
 		Pro       ip2ProxyConfig
 		PrintType bool `default:"false"`
 	}
-	MaxMind struct {
-		Enabled   bool   `default:"false"`
-		IPVer     int    `default:"4"`
-		Lang      string `default:"ru"`
-		TZNames   bool   `default:"false"`
-		Include   string
-		Exclude   string
-		NoBase64  bool `default:"false"`
-		NoCountry bool `default:"false"`
-	}
+	MaxMind   maxMindConfig
 	IPGeobase struct {
 		Enabled bool `default:"false"`
 	}
 }{}
 
-func main() {
+func configLoad() {
 	configFile := flag.String("c", "", "Read config from file")
 	quiet := flag.Bool("q", false, "Be quiet - skip [OK]")
 	veryQuiet := flag.Bool("qq", false, "Be very quiet - show only errors")
@@ -66,7 +68,7 @@ func main() {
 	flag.Parse()
 	if *version {
 		printMessage("ip2geo", "version "+VERSION, "OK")
-		return
+		os.Exit(0)
 	}
 	configor.Load(&Config, *configFile)
 	if *quiet {
@@ -75,6 +77,7 @@ func main() {
 	if *veryQuiet {
 		Config.LogLevel = 2
 	}
+
 	if !(Config.IPGeobase.Enabled || Config.TOR.Enabled || Config.MaxMind.Enabled || Config.IP2Proxy.Lite.Enabled || Config.IP2Proxy.Pro.Enabled) {
 		// By default, generate all maps
 		Config.IPGeobase.Enabled = true
@@ -83,6 +86,10 @@ func main() {
 		Config.IP2Proxy.Lite.Enabled = Config.IP2Proxy.Lite.Token != "" || Config.IP2Proxy.Lite.Filename != ""
 		Config.IP2Proxy.Pro.Enabled = Config.IP2Proxy.Pro.Token != "" || Config.IP2Proxy.Pro.Filename != ""
 	}
+}
+
+func main() {
+	configLoad()
 
 	os.MkdirAll(Config.OutputDir, 0755)
 	if Config.LogLevel < 2 {
@@ -111,15 +118,9 @@ func main() {
 	if Config.MaxMind.Enabled {
 		goroutinesCount++
 		m := MaxMind{
-			OutputDir:  Config.OutputDir,
-			ErrorsChan: errorChannel,
-			lang:       Config.MaxMind.Lang,
-			ipver:      Config.MaxMind.IPVer,
-			tzNames:    Config.MaxMind.TZNames,
-			include:    Config.MaxMind.Include,
-			exclude:    Config.MaxMind.Exclude,
-			noBase64:   Config.MaxMind.NoBase64,
-			noCountry:  Config.MaxMind.NoCountry,
+			OutputDir:     Config.OutputDir,
+			ErrorsChan:    errorChannel,
+			maxMindConfig: Config.MaxMind,
 		}
 		go Generate(&m)
 	}
