@@ -20,7 +20,7 @@ type ip2proxyItem struct {
 	Country     string
 	Region      string
 	City        string
-	Company     string
+	ISP         string
 }
 
 type ip2proxy struct {
@@ -151,7 +151,7 @@ func (o *ip2proxy) lineToItem(line []string) (*ip2proxyItem, error) {
 		Country:     line[4],
 		Region:      line[5],
 		City:        line[6],
-		Company:     line[7],
+		ISP:         line[7],
 	}, nil
 }
 
@@ -160,11 +160,16 @@ func (o *ip2proxy) Write() error {
 }
 
 func (o *ip2proxy) writeNetworks() error {
-	file, err := os.Create(path.Join(o.OutputDir, o.Name+"_net.txt"))
+	netFile, err := os.Create(path.Join(o.OutputDir, o.Name+"_net.txt"))
 	if err != nil {
 		return err
 	}
-	defer file.Close()
+	defer netFile.Close()
+	ispFile, err := os.Create(path.Join(o.OutputDir, o.Name+"_isp.txt"))
+	if err != nil {
+		return err
+	}
+	defer ispFile.Close()
 	var mapValue string
 	for _, item := range o.items {
 		if o.PrintType {
@@ -172,7 +177,8 @@ func (o *ip2proxy) writeNetworks() error {
 		} else {
 			mapValue = "1"
 		}
-		fmt.Fprintf(file, "%s-%s \"%s\";\n", item.IPFrom, item.IPTo, mapValue)
+		fmt.Fprintf(netFile, "%s-%s \"%s\";\n", item.IPFrom, item.IPTo, mapValue)
+		fmt.Fprintf(ispFile, "%s-%s \"%s\";\n", item.IPFrom, item.IPTo, strings.Replace(item.ISP, "\"", "\\\"", -1))
 	}
 	return nil
 }
