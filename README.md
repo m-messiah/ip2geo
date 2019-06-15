@@ -4,7 +4,7 @@
 
 Импортер ipgeo-данных в файлы, понятные для [nginx geo module](http://nginx.org/ru/docs/http/ngx_http_geo_module.html), с поддержкой кодов регионов РФ.
 
-Поддерживает Ipgeobase.ru, TOR-списки, MaxMind GeoLite (для городов), Lite.ip2location базы ip2proxy.
+Поддерживает Ipgeobase.ru, TOR-списки, MaxMind GeoLite (для городов и стран), базы IP2Proxy PX4 и PX4LITE.
 
 ## Установка
 
