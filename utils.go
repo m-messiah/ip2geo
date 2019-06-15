@@ -45,19 +45,19 @@ func printMessage(module, message, status string) {
 	var statusMesage string
 	switch status {
 	case "OK":
-		if logLevel > 0 {
+		if Config.LogLevel > 0 {
 			return
 		}
 		statusMesage = color.GreenString(status)
 	case "WARN":
-		if logLevel > 1 {
+		if Config.LogLevel > 1 {
 			return
 		}
 		statusMesage = color.YellowString(status)
 	case "FAIL":
 		statusMesage = color.RedString(status)
 	default:
-		if logLevel > 1 {
+		if Config.LogLevel > 1 {
 			return
 		}
 		statusMesage = color.BlueString(status)
