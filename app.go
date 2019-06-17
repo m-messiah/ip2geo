@@ -70,7 +70,7 @@ func configLoad() {
 		printMessage("ip2geo", "version "+VERSION, "OK")
 		os.Exit(0)
 	}
-	configor.Load(&Config, *configFile)
+	configor.New(&configor.Config{Silent: true}).Load(&Config, *configFile)
 	if *quiet {
 		Config.LogLevel = 1
 	}

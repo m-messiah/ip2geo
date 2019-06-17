@@ -25,7 +25,6 @@ type ip2proxyItem struct {
 }
 
 type ip2proxy struct {
-	items       []*ip2proxyItem
 	archive     []*zip.File
 	OutputDir   string
 	ErrorsChan  chan Error
@@ -63,10 +62,6 @@ func (o *ip2proxy) Get() {
 	}
 	err = o.unpack(fileData)
 	if o.checkErr(err, "Unpack") {
-		return
-	}
-	err = o.Parse(o.csvFilename)
-	if o.checkErr(err, "Parse") {
 		return
 	}
 	err = o.Write()
@@ -116,18 +111,20 @@ func (o *ip2proxy) unpack(response []byte) error {
 	return err
 }
 
-func (o *ip2proxy) Parse(filename string) error {
-	var list []*ip2proxyItem
-	for record := range readCSVDatabase(o.archive, filename, o.Name, ',', false) {
-		item, err := o.lineToItem(record)
-		if err != nil {
-			printMessage(o.Name, fmt.Sprintf("Can't parse line from %s with %v", filename, err), "WARN")
-			continue
+func (o *ip2proxy) Parse(filename string) <-chan *ip2proxyItem {
+	database := make(chan *ip2proxyItem)
+	go func() {
+		for record := range readCSVDatabase(o.archive, filename, o.Name, ',', false) {
+			item, err := o.lineToItem(record)
+			if err != nil {
+				printMessage(o.Name, fmt.Sprintf("Can't parse line from %s with %v", filename, err), "WARN")
+				continue
+			}
+			database <- item
 		}
-		list = append(list, item)
-	}
-	o.items = list
-	return nil
+		close(database)
+	}()
+	return database
 }
 
 func (o *ip2proxy) lineToItem(line []string) (*ip2proxyItem, error) {
@@ -157,10 +154,6 @@ func (o *ip2proxy) lineToItem(line []string) (*ip2proxyItem, error) {
 }
 
 func (o *ip2proxy) Write() error {
-	return o.writeNetworks()
-}
-
-func (o *ip2proxy) writeNetworks() error {
 	netFile, err := os.Create(path.Join(o.OutputDir, o.Name+"_net.txt"))
 	if err != nil {
 		return err
@@ -172,7 +165,7 @@ func (o *ip2proxy) writeNetworks() error {
 	}
 	defer ispFile.Close()
 	var mapValue string
-	for _, item := range o.items {
+	for item := range o.Parse(o.csvFilename) {
 		if o.PrintType {
 			mapValue = item.ProxyType
 		} else {
