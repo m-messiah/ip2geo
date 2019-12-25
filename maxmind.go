@@ -30,7 +30,16 @@ func (maxmind *MaxMind) addError(err Error) {
 }
 
 func (maxmind *MaxMind) download() ([]byte, error) {
-	resp, err := http.Get("http://geolite.maxmind.com/download/geoip/database/GeoLite2-City-CSV.zip")
+	// If used filename, no download
+	if len(maxmind.Filename) > 0 {
+		return ioutil.ReadFile(maxmind.Filename)
+	}
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-City-CSV&suffix=zip", nil)
+	q := req.URL.Query()
+	q.Add("license_key", maxmind.LicenseKey)
+	req.URL.RawQuery = q.Encode()
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}

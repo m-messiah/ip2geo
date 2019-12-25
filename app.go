@@ -13,14 +13,16 @@ type ip2ProxyConfig struct {
 }
 
 type maxMindConfig struct {
-	Enabled   bool   `default:"false"`
-	IPVer     int    `default:"4"`
-	Lang      string `default:"ru"`
-	TZNames   bool   `default:"false"`
-	Include   string
-	Exclude   string
-	NoBase64  bool `default:"false"`
-	NoCountry bool `default:"false"`
+	Enabled    bool `default:"false"`
+	LicenseKey string
+	Filename   string
+	IPVer      int    `default:"4"`
+	Lang       string `default:"ru"`
+	TZNames    bool   `default:"false"`
+	Include    string
+	Exclude    string
+	NoBase64   bool `default:"false"`
+	NoCountry  bool `default:"false"`
 }
 
 // Config - all configuration for tool defined here
@@ -57,14 +59,16 @@ func configLoad() {
 	flag.StringVar(&Config.IP2Proxy.Lite.Filename, "ip2proxy-lite-filename", "", "Filename of already downloaded ip2proxy-lite db")
 	flag.StringVar(&Config.IP2Proxy.Pro.Filename, "ip2proxy-pro-filename", "", "Filename of already downloaded ip2proxy db")
 	flag.BoolVar(&Config.IP2Proxy.PrintType, "ip2proxy-print-type", false, "Print proxy type in map, instead of `1`")
-	flag.BoolVar(&Config.MaxMind.Enabled, "maxmind", false, "enable maxmind generation")
+	flag.BoolVar(&Config.MaxMind.Enabled, "maxmind", false, "enable MaxMind generation")
+	flag.StringVar(&Config.MaxMind.LicenseKey, "maxmind-license-key", "", "MaxMind license key for download")
+	flag.StringVar(&Config.MaxMind.Filename, "maxmind-filename", "", "Filename of already downloaded MaxMind db")
 	flag.IntVar(&Config.MaxMind.IPVer, "ipver", 4, "MaxMind ip version (4 or 6)")
 	flag.StringVar(&Config.MaxMind.Lang, "lang", "ru", "MaxMind city name language")
 	flag.BoolVar(&Config.MaxMind.TZNames, "tznames", false, "MaxMind TZ in names format (for example `Europe/Moscow`)")
 	flag.StringVar(&Config.MaxMind.Include, "include", "", "MaxMind output filter: only these countries")
 	flag.StringVar(&Config.MaxMind.Exclude, "exclude", "", "MaxMind output filter: except these countries")
 	flag.BoolVar(&Config.MaxMind.NoBase64, "nobase64", false, "MaxMind Cities as-is (without base64 encode). DO NOT USE IT IF YOU NOT SURE ABOUT MaxMind encoding")
-	flag.BoolVar(&Config.MaxMind.NoCountry, "nocountry", false, "do not add maxmind country maps")
+	flag.BoolVar(&Config.MaxMind.NoCountry, "nocountry", false, "do not add MaxMind country maps")
 	flag.Parse()
 	if *version {
 		printMessage("ip2geo", "version "+VERSION, "OK")
@@ -82,7 +86,7 @@ func configLoad() {
 		// By default, generate all maps
 		Config.IPGeobase.Enabled = true
 		Config.TOR.Enabled = true
-		Config.MaxMind.Enabled = true
+		Config.MaxMind.Enabled = Config.MaxMind.LicenseKey != "" || Config.MaxMind.Filename != ""
 		Config.IP2Proxy.Lite.Enabled = Config.IP2Proxy.Lite.Token != "" || Config.IP2Proxy.Lite.Filename != ""
 		Config.IP2Proxy.Pro.Enabled = Config.IP2Proxy.Pro.Token != "" || Config.IP2Proxy.Pro.Filename != ""
 	}
