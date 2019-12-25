@@ -13,6 +13,7 @@ ip2proxy:
     token: "1234567890"
 maxmind:
   enabled: true
+  licensekey: "ABCDEFGH"
   lang: en
   ipver: 6
   nobase64: true

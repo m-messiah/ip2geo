@@ -46,6 +46,10 @@
     -maxmind
         Генерация баз MaxMind (название города, часовой пояс)
     Дальше параметры для MaxMind:
+    -maxmind-license-key string
+        Лицензионный ключ для MaxMind
+    -maxmind-filename string
+        Путь до уже скачанного файла MaxMind GeoLite2-City-CSV.csv
     -lang string
         Язык MaxMind баз (по умолчанию ru)
     -ipver int
