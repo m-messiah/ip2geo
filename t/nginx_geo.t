@@ -4,28 +4,16 @@ run_tests();
 __DATA__
 
 === TEST 1: ip2geo
+--- main_config
+    error_log  $TEST_NGINX_IP2GEO_DIR/error.log;
 --- http_config
 
-# Region
-    geo $region {
-        ranges;
-        include $TEST_NGINX_IP2GEO_DIR/output/region.txt;
-    }
 # City
-    geo $city_geo {
-        ranges;
-        include $TEST_NGINX_IP2GEO_DIR/output/city.txt;
-    }
-
-    geo $city_mm {
+    geo $city {
         ranges;
         include $TEST_NGINX_IP2GEO_DIR/output/mm_city.txt;
     }
 
-    map $city_geo $city {
-        "" $city_mm;
-        default $city_geo;
-    }
 # Country
     geo $country {
         ranges;
@@ -37,19 +25,9 @@ __DATA__
         include $TEST_NGINX_IP2GEO_DIR/output/mm_country_code.txt;
     }
 # TZ
-    geo $tz_geo {
-        ranges;
-        include $TEST_NGINX_IP2GEO_DIR/output/tz.txt;
-    }
-
-    geo $tz_mm {
+    geo $tz {
         ranges;
         include $TEST_NGINX_IP2GEO_DIR/output/mm_tz.txt;
-    }
-
-    map $tz_geo $tz {
-        "" $tz_mm;
-        default $tz_geo;
     }
 # Tor
     geo $is_tor {
