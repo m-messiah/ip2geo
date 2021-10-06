@@ -36,6 +36,9 @@ func (maxmind *MaxMind) download() ([]byte, error) {
 	}
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-City-CSV&suffix=zip", nil)
+	if err != nil {
+		return nil, err
+	}
 	q := req.URL.Query()
 	q.Add("license_key", maxmind.LicenseKey)
 	req.URL.RawQuery = q.Encode()

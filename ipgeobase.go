@@ -58,7 +58,7 @@ func (ipgeobase *IPGeobase) citiesDB() (map[string]geoItem, error) {
 		cid, city, regionName := record[0], record[1], record[2]
 		if region, ok := REGIONS[regionName]; ok {
 			if cid == "1199" {
-				region, _ = REGIONS["Москва"]
+				region = REGIONS["Москва"]
 			}
 			cities[cid] = geoItem{
 				City:  city,
