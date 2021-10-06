@@ -59,12 +59,16 @@ jobs:
         TEST_NGINX_IP2GEO_DIR=$PWD prove t/nginx_geo_ipv6.t
         
     - name: Build release files
-      # if: ${{ github.ref == 'refs/heads/master' }}
+      if: ${{ github.ref == 'refs/heads/master' }} || startsWith(github.ref, 'refs/tags/')
       run: |
         GOOS=darwin go build -o ip2geo-mac
-        GOOS=darwin GOARCH=arm go build -o ip2geo-mac-arm
         GOOS=freebsd go build -o ip2geo-freebsd
         GOOS=linux GOARCH=386 go build -o ip2geo-linux32
         GOOS=linux GOARCH=amd64 go build -o ip2geo-linux64
         GOOS=linux GOARCH=arm go build -o ip2geo-linuxARM
         GOOS=openbsd go build -o ip2geo-openbsd
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: ip2geo-*
