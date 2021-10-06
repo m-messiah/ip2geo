@@ -1,4 +1,6 @@
 language: go
+go:
+- tip
 addons:
   apt:
     packages:
