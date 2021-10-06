@@ -21,28 +21,47 @@ jobs:
       with:
         go-version: 1.17
     
-    - name: Set up packages
+    - name: Install packages
+      run: sudo apt-get install -y nginx tzdata cpanminus
+    - name: Install local::lib
       run: |
-        sudo apt-get install -y nginx tzdata cpanminus
         sudo cpanm --quiet local::lib
         eval $(perl -Mlocal::lib)
-        sudo cpanm --quiet --notest Test::Nginx::Socket
-        sed -i 's/const VERSION = .*/const VERSION = "'${GITHUB_REF##*/}'"/' version.go
+    - name: Install Test::Nginx::Socket
+      run: sudo cpanm --quiet --notest Test::Nginx::Socket
+    
+    - name: Add version info
+      run: sed -i 's/const VERSION = .*/const VERSION = "'${GITHUB_REF##*/}'"/' version.go
 
     - name: Build
       run: go build -o ip2geo -v ./...
 
-    - name: Test
+    - name: Test version
+      env:
+        MAXMIND_LICENSE_KEY: ${{ secrets.MAXMIND_LICENSE_KEY }}
+      run: ./ip2geo -version
+    - name: Test maxmind
       env:
         MAXMIND_LICENSE_KEY: ${{ secrets.MAXMIND_LICENSE_KEY }}
       run: |
-        ./ip2geo -version
         ./ip2geo -maxmind-license-key $MAXMIND_LICENSE_KEY
         TEST_NGINX_IP2GEO_DIR=$PWD prove t/nginx_geo.t
+    - name: Test nobase64
+      env:
+        MAXMIND_LICENSE_KEY: ${{ secrets.MAXMIND_LICENSE_KEY }}
+      run: |
         ./ip2geo -lang en -nobase64 -maxmind-license-key $MAXMIND_LICENSE_KEY
         TEST_NGINX_IP2GEO_DIR=$PWD prove t/nginx_geo.t
+    - name: Test ipv6
+      env:
+        MAXMIND_LICENSE_KEY: ${{ secrets.MAXMIND_LICENSE_KEY }}
+      run: |
         ./ip2geo -ipver 6 -maxmind-license-key $MAXMIND_LICENSE_KEY
         TEST_NGINX_IP2GEO_DIR=$PWD prove t/nginx_geo_ipv6.t
+    - name: Test ipv6 for en
+      env:
+        MAXMIND_LICENSE_KEY: ${{ secrets.MAXMIND_LICENSE_KEY }}
+      run: |
         ./ip2geo -ipver 6 -lang en -nobase64 -maxmind-license-key $MAXMIND_LICENSE_KEY
         TEST_NGINX_IP2GEO_DIR=$PWD prove t/nginx_geo_ipv6.t
         
