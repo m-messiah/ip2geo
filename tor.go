@@ -11,6 +11,8 @@ import (
 	"time"
 )
 
+const torListLength = 1
+
 // Tor network lists DB
 type Tor struct {
 	OutputDir  string
@@ -21,8 +23,8 @@ type Tor struct {
 
 // Generate Tor maps for nginx (download, parse, merge, write)
 func (tor *Tor) Generate() {
-	tor.tempLists = make(chan map[string]bool, 2)
-	go tor.blutmagieDownload()
+	tor.tempLists = make(chan map[string]bool, torListLength)
+	// go tor.blutmagieDownload()
 	go tor.torProjectDownload()
 	if err := tor.merge(); err != nil {
 		tor.ErrorsChan <- Error{err, "TOR", "Merge"}
@@ -37,34 +39,34 @@ func (tor *Tor) Generate() {
 	tor.ErrorsChan <- Error{err: nil}
 }
 
-func (tor *Tor) blutmagieDownload() {
-	resp, err := http.Get("https://torstatus.blutmagie.de/ip_list_exit.php/Tor_ip_list_EXIT.csv")
-	if err != nil {
-		printMessage("TOR", "Blutmagie Download", "FAIL")
-		tor.tempLists <- nil
-		return
-	}
-	defer resp.Body.Close()
-	torlist := make(map[string]bool)
-	reader := bufio.NewReader(resp.Body)
-	for {
-		line, err := reader.ReadString('\n')
-		// Stop at EOF.
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			printMessage("TOR", "can't read line from blutmagie", "WARN")
-			continue
-		}
-		if len(line) < 1 {
-			continue
-		}
-		torlist[strings.TrimSpace(line)] = true
-	}
-	printMessage("TOR", "Blutmagie Download", "OK")
-	tor.tempLists <- torlist
-}
+// func (tor *Tor) blutmagieDownload() {
+// 	resp, err := http.Get("https://torstatus.blutmagie.de/ip_list_exit.php/Tor_ip_list_EXIT.csv")
+// 	if err != nil {
+// 		printMessage("TOR", "Blutmagie Download", "FAIL")
+// 		tor.tempLists <- nil
+// 		return
+// 	}
+// 	defer resp.Body.Close()
+// 	torlist := make(map[string]bool)
+// 	reader := bufio.NewReader(resp.Body)
+// 	for {
+// 		line, err := reader.ReadString('\n')
+// 		// Stop at EOF.
+// 		if err == io.EOF {
+// 			break
+// 		}
+// 		if err != nil {
+// 			printMessage("TOR", "can't read line from blutmagie", "WARN")
+// 			continue
+// 		}
+// 		if len(line) < 1 {
+// 			continue
+// 		}
+// 		torlist[strings.TrimSpace(line)] = true
+// 	}
+// 	printMessage("TOR", "Blutmagie Download", "OK")
+// 	tor.tempLists <- torlist
+// }
 
 func (tor *Tor) torProjectDownload() {
 	client := &http.Client{Timeout: time.Second * 30}
@@ -101,7 +103,7 @@ func (tor *Tor) torProjectDownload() {
 
 func (tor *Tor) merge() error {
 	result := make(map[string]bool)
-	for i := 0; i < 2; i++ {
+	for i := 0; i < torListLength; i++ {
 		m := <-tor.tempLists
 		if m == nil {
 			continue
