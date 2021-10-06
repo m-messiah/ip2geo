@@ -33,6 +33,8 @@ jobs:
       run: go build -o ip2geo -v ./...
 
     - name: Test
+      env:
+        MAXMIND_LICENSE_KEY: ${{ secrets.MAXMIND_LICENSE_KEY }}
       run: |
         ./ip2geo -version
         ./ip2geo -maxmind-license-key $MAXMIND_LICENSE_KEY
