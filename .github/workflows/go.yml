@@ -37,33 +37,27 @@ jobs:
       run: go build -o ip2geo -v ./...
 
     - name: Test version
-      env:
-        MAXMIND_LICENSE_KEY: ${{ secrets.MAXMIND_LICENSE_KEY }}
       run: ./ip2geo -version
 
+    - name: Download MaxMind
+      run: wget -O maxmind.zip 'https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-City-CSV&suffix=zip&license_key=${{ secrets.MAXMIND_LICENSE_KEY }}'
+
     - name: Test maxmind
-      env:
-        MAXMIND_LICENSE_KEY: ${{ secrets.MAXMIND_LICENSE_KEY }}
       run: |
-        ./ip2geo -maxmind-license-key $MAXMIND_LICENSE_KEY
+        ./ip2geo -maxmind-filename maxmind.zip
         TEST_NGINX_IP2GEO_DIR=$PWD prove t/nginx_geo.t
+
     - name: Test nobase64
-      env:
-        MAXMIND_LICENSE_KEY: ${{ secrets.MAXMIND_LICENSE_KEY }}
       run: |
-        ./ip2geo -lang en -nobase64 -maxmind-license-key $MAXMIND_LICENSE_KEY
+        ./ip2geo -lang en -nobase64 -maxmind-filename maxmind.zip
         TEST_NGINX_IP2GEO_DIR=$PWD prove t/nginx_geo.t
     - name: Test ipv6
-      env:
-        MAXMIND_LICENSE_KEY: ${{ secrets.MAXMIND_LICENSE_KEY }}
       run: |
-        ./ip2geo -ipver 6 -maxmind-license-key $MAXMIND_LICENSE_KEY -maxmind
+        ./ip2geo -ipver 6 -maxmind-filename maxmind.zip -maxmind
         TEST_NGINX_IP2GEO_DIR=$PWD prove t/nginx_geo_ipv6.t
     - name: Test ipv6 for en
-      env:
-        MAXMIND_LICENSE_KEY: ${{ secrets.MAXMIND_LICENSE_KEY }}
       run: |
-        ./ip2geo -ipver 6 -lang en -nobase64 -maxmind-license-key $MAXMIND_LICENSE_KEY -maxmind
+        ./ip2geo -ipver 6 -lang en -nobase64 -maxmind-filename maxmind.zip -maxmind
         TEST_NGINX_IP2GEO_DIR=$PWD prove t/nginx_geo_ipv6.t
         
     - name: Build release files
