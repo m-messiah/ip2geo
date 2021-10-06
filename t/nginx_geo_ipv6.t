@@ -3,36 +3,26 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: ip2geo
+=== TEST 1: ip2geo -ipv6
 --- http_config
     error_log  error.log;
 
 # City
     geo $city {
-        ranges;
         include $TEST_NGINX_IP2GEO_DIR/output/mm_city.txt;
     }
 
 # Country
     geo $country {
-        ranges;
         include $TEST_NGINX_IP2GEO_DIR/output/mm_country.txt;
     }
 # CountryCode
     geo $country_code {
-        ranges;
         include $TEST_NGINX_IP2GEO_DIR/output/mm_country_code.txt;
     }
 # TZ
     geo $tz {
-        ranges;
         include $TEST_NGINX_IP2GEO_DIR/output/mm_tz.txt;
-    }
-# Tor
-    geo $is_tor {
-        ranges;
-        default 0;
-        include $TEST_NGINX_IP2GEO_DIR/output/tor.txt;
     }
 
 --- config

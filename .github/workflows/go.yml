@@ -57,14 +57,14 @@ jobs:
       env:
         MAXMIND_LICENSE_KEY: ${{ secrets.MAXMIND_LICENSE_KEY }}
       run: |
-        ./ip2geo -ipver 6 -maxmind-license-key $MAXMIND_LICENSE_KEY
-        TEST_NGINX_IP2GEO_DIR=$PWD prove t/nginx_geo.t
+        ./ip2geo -ipver 6 -maxmind-license-key $MAXMIND_LICENSE_KEY -maxmind
+        TEST_NGINX_IP2GEO_DIR=$PWD prove t/nginx_geo_ipv6.t
     - name: Test ipv6 for en
       env:
         MAXMIND_LICENSE_KEY: ${{ secrets.MAXMIND_LICENSE_KEY }}
       run: |
-        ./ip2geo -ipver 6 -lang en -nobase64 -maxmind-license-key $MAXMIND_LICENSE_KEY
-        TEST_NGINX_IP2GEO_DIR=$PWD prove t/nginx_geo.t
+        ./ip2geo -ipver 6 -lang en -nobase64 -maxmind-license-key $MAXMIND_LICENSE_KEY -maxmind
+        TEST_NGINX_IP2GEO_DIR=$PWD prove t/nginx_geo_ipv6.t
         
     - name: Build release files
       if: ${{ github.ref == 'refs/heads/master' }}
