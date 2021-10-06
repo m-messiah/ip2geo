@@ -5,6 +5,9 @@ on:
     branches: [ master ]
   pull_request:
     branches: [ master ]
+  release:
+    types:
+      - created
 
 jobs:
 
@@ -17,6 +20,36 @@ jobs:
       uses: actions/setup-go@v2
       with:
         go-version: 1.17
+    
+    - name: Set up packages
+      run: |
+        sudo apt-get install -y nginx tzdata cpanminus
+        cpanm --local-lib=~/perl5 --quiet local::lib
+        eval $(perl -I ~/perl5/lib/perl5/ -Mlocal::lib)
+        cpanm --local-lib=~/perl5 --quiet --notest Test::Nginx::Socket
+        sed -i 's/const VERSION = .*/const VERSION = "'${GITHUB_REF##*/}'"/' version.go
 
     - name: Build
-      run: go build -v ./...
+      run: go build -o ip2geo -v ./...
+
+    - name: Test
+      run: |
+        ./ip2geo -version
+        ./ip2geo -maxmind-license-key $MAXMIND_LICENSE_KEY
+        TEST_NGINX_IP2GEO_DIR=$PWD prove t/nginx_geo.t
+        ./ip2geo -lang en -nobase64 -maxmind-license-key $MAXMIND_LICENSE_KEY
+        TEST_NGINX_IP2GEO_DIR=$PWD prove t/nginx_geo.t
+        ./ip2geo -ipver 6 -maxmind-license-key $MAXMIND_LICENSE_KEY
+        TEST_NGINX_IP2GEO_DIR=$PWD prove t/nginx_geo_ipv6.t
+        ./ip2geo -ipver 6 -lang en -nobase64 -maxmind-license-key $MAXMIND_LICENSE_KEY
+        TEST_NGINX_IP2GEO_DIR=$PWD prove t/nginx_geo_ipv6.t
+        
+    - name: Publish
+      if: ${{ github.ref == 'refs/heads/master' }}
+      run: |
+        GOOS=darwin go build -o ip2geo-mac
+        GOOS=freebsd go build -o ip2geo-freebsd
+        GOOS=linux GOARCH=386 go build -o ip2geo-linux32
+        GOOS=linux GOARCH=amd64 go build -o ip2geo-linux64
+        GOOS=linux GOARCH=arm go build -o ip2geo-linuxARM
+        GOOS=openbsd go build -o ip2geo-openbsd
