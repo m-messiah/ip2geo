@@ -5,7 +5,7 @@ __DATA__
 
 === TEST 1: ip2geo
 --- http_config
-    error_log  error.log;
+    error_log  $TEST_NGINX_IP2GEO_DIR/error.log;
 
 # City
     geo $city {
