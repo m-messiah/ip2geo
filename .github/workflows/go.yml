@@ -1,0 +1,74 @@
+name: Go
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  release:
+    types:
+      - created
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.17
+    
+    - name: Set up environment
+      run: |
+        sudo apt-get install -y nginx tzdata cpanminus
+        sudo cpanm --quiet local::lib
+        eval $(perl -Mlocal::lib)
+        sudo cpanm --quiet --notest Test::Nginx::Socket
+    
+    - name: Add version info
+      run: sed -i 's/const VERSION = .*/const VERSION = "'${GITHUB_REF##*/}'"/' version.go
+
+    - name: Build
+      run: go build -o ip2geo -v ./...
+
+    - name: Test version
+      run: ./ip2geo -version
+
+    - name: Download MaxMind
+      run: wget --quiet -O maxmind.zip 'https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-City-CSV&suffix=zip&license_key=${{ secrets.MAXMIND_LICENSE_KEY }}'
+
+    - name: Test maxmind
+      run: |
+        ./ip2geo -maxmind-filename maxmind.zip
+        TEST_NGINX_IP2GEO_DIR=$PWD prove t/nginx_geo.t
+
+    - name: Test nobase64
+      run: |
+        ./ip2geo -lang en -nobase64 -maxmind-filename maxmind.zip
+        TEST_NGINX_IP2GEO_DIR=$PWD prove t/nginx_geo.t
+    - name: Test ipv6
+      run: |
+        ./ip2geo -ipver 6 -maxmind-filename maxmind.zip -maxmind
+        TEST_NGINX_IP2GEO_DIR=$PWD prove t/nginx_geo_ipv6.t
+    - name: Test ipv6 for en
+      run: |
+        ./ip2geo -ipver 6 -lang en -nobase64 -maxmind-filename maxmind.zip -maxmind
+        TEST_NGINX_IP2GEO_DIR=$PWD prove t/nginx_geo_ipv6.t
+        
+    - name: Build release files
+      if: ${{ github.ref == 'refs/heads/master' }} || startsWith(github.ref, 'refs/tags/')
+      run: |
+        GOOS=darwin go build -o ip2geo-mac
+        GOOS=freebsd go build -o ip2geo-freebsd
+        GOOS=linux GOARCH=386 go build -o ip2geo-linux32
+        GOOS=linux GOARCH=amd64 go build -o ip2geo-linux64
+        GOOS=linux GOARCH=arm go build -o ip2geo-linuxARM
+        GOOS=openbsd go build -o ip2geo-openbsd
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: ip2geo-*

@@ -2,8 +2,10 @@ package main
 
 import (
 	"flag"
-	"github.com/jinzhu/configor"
+	"fmt"
 	"os"
+
+	"github.com/jinzhu/configor"
 )
 
 type ip2ProxyConfig struct {
@@ -74,7 +76,11 @@ func configLoad() {
 		printMessage("ip2geo", "version "+VERSION, "OK")
 		os.Exit(0)
 	}
-	configor.New(&configor.Config{Silent: true}).Load(&Config, *configFile)
+	err := configor.New(&configor.Config{Silent: true}).Load(&Config, *configFile)
+	if err != nil {
+		printMessage("ip2geo", fmt.Sprintf("configor failed: %s", err), "FAIL")
+		os.Exit(1)
+	}
 	if *quiet {
 		Config.LogLevel = 1
 	}
@@ -83,8 +89,8 @@ func configLoad() {
 	}
 
 	if !(Config.IPGeobase.Enabled || Config.TOR.Enabled || Config.MaxMind.Enabled || Config.IP2Proxy.Lite.Enabled || Config.IP2Proxy.Pro.Enabled) {
-		// By default, generate all maps
-		Config.IPGeobase.Enabled = true
+		// By default, generate all maps except IPGeobase
+		Config.IPGeobase.Enabled = false
 		Config.TOR.Enabled = true
 		Config.MaxMind.Enabled = Config.MaxMind.LicenseKey != "" || Config.MaxMind.Filename != ""
 		Config.IP2Proxy.Lite.Enabled = Config.IP2Proxy.Lite.Token != "" || Config.IP2Proxy.Lite.Filename != ""
@@ -95,7 +101,7 @@ func configLoad() {
 func main() {
 	configLoad()
 
-	os.MkdirAll(Config.OutputDir, 0755)
+	_ = os.MkdirAll(Config.OutputDir, 0755)
 	if Config.LogLevel < 2 {
 		printMessage(" ", "Use output directory", Config.OutputDir)
 	}
