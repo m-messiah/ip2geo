@@ -89,8 +89,8 @@ func configLoad() {
 	}
 
 	if !(Config.IPGeobase.Enabled || Config.TOR.Enabled || Config.MaxMind.Enabled || Config.IP2Proxy.Lite.Enabled || Config.IP2Proxy.Pro.Enabled) {
-		// By default, generate all maps
-		Config.IPGeobase.Enabled = true
+		// By default, generate all maps except IPGeobase
+		Config.IPGeobase.Enabled = false
 		Config.TOR.Enabled = true
 		Config.MaxMind.Enabled = Config.MaxMind.LicenseKey != "" || Config.MaxMind.Filename != ""
 		Config.IP2Proxy.Lite.Enabled = Config.IP2Proxy.Lite.Token != "" || Config.IP2Proxy.Lite.Filename != ""
