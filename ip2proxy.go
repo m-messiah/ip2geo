@@ -84,6 +84,9 @@ func (o *ip2proxy) getZip() ([]byte, error) {
 func (o *ip2proxy) download() ([]byte, error) {
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", "https://www.ip2location.com/download", nil)
+	if err != nil {
+		return nil, err
+	}
 	q := req.URL.Query()
 	q.Add("file", o.zipFilename)
 	q.Add("token", o.Token)
