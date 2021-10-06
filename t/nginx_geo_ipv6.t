@@ -4,8 +4,9 @@ run_tests();
 __DATA__
 
 === TEST 1: ip2geo -ipv6
---- http_config
+--- main_config
     error_log  $TEST_NGINX_IP2GEO_DIR/error.log;
+--- http_config
 
 # City
     geo $city {
