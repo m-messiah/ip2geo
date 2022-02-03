@@ -2,10 +2,10 @@ name: Go
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
     tags: [ 'v*' ]
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
 
 jobs:
 
@@ -57,7 +57,7 @@ jobs:
         TEST_NGINX_IP2GEO_DIR=$PWD prove t/nginx_geo_ipv6.t
         
     - name: Build release files
-      if: ${{ github.ref == 'refs/heads/master' }} || startsWith(github.ref, 'refs/tags/')
+      if: ${{ github.ref == 'refs/heads/main' }} || startsWith(github.ref, 'refs/tags/')
       run: |
         GOOS=darwin go build -o ip2geo-mac
         GOOS=freebsd go build -o ip2geo-freebsd
