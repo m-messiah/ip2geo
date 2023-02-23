@@ -4,7 +4,7 @@ import (
 	"archive/zip"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"net/http"
 	"os"
@@ -75,7 +75,7 @@ func (o *ip2proxy) getZip() ([]byte, error) {
 	if len(o.Token) > 0 {
 		return o.download()
 	} else if len(o.Filename) > 0 {
-		return ioutil.ReadFile(o.Filename)
+		return os.ReadFile(o.Filename)
 	} else {
 		return nil, errors.New("Token or Filename must be passed")
 	}
@@ -99,7 +99,7 @@ func (o *ip2proxy) download() ([]byte, error) {
 	if resp.StatusCode != 200 {
 		return nil, fmt.Errorf("failed with code %d", resp.StatusCode)
 	}
-	answer, err := ioutil.ReadAll(resp.Body)
+	answer, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}

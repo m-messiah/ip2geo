@@ -5,7 +5,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"strconv"
@@ -32,7 +32,7 @@ func (maxmind *MaxMind) addError(err Error) {
 func (maxmind *MaxMind) download() ([]byte, error) {
 	// If used filename, no download
 	if len(maxmind.Filename) > 0 {
-		return ioutil.ReadFile(maxmind.Filename)
+		return os.ReadFile(maxmind.Filename)
 	}
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-City-CSV&suffix=zip", nil)
@@ -47,7 +47,7 @@ func (maxmind *MaxMind) download() ([]byte, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	answer, err := ioutil.ReadAll(resp.Body)
+	answer, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
