@@ -5,7 +5,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 )
 
@@ -31,7 +31,7 @@ func (ipgeobase *IPGeobase) download() ([]byte, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	answer, err := ioutil.ReadAll(resp.Body)
+	answer, err := io.ReadAll(resp.Body)
 	if err != nil {
 		printMessage("IPGeobase", "Download bad answer", "FAIL")
 		return nil, err
