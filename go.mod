@@ -1,6 +1,6 @@
 module github.com/m-messiah/ip2geo
 
-go 1.19
+go 1.21
 
 require (
 	github.com/fatih/color v1.14.1
