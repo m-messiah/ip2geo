@@ -36,7 +36,9 @@ jobs:
       run: ./ip2geo -version
 
     - name: Download MaxMind
-      run: wget --quiet -O maxmind.zip 'https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-City-CSV&suffix=zip&license_key=${{ secrets.MAXMIND_LICENSE_KEY }}'
+      env:
+        MAXMIND_LICENSE_KEY: ${{ secrets.MAXMIND_LICENSE_KEY }}
+      run: wget --quiet -O maxmind.zip 'https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-City-CSV&suffix=zip&license_key=$MAXMIND_LICENSE_KEY'
 
     - name: Test maxmind
       run: |
