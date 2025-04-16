@@ -5,7 +5,7 @@ go 1.23.0
 require (
 	github.com/fatih/color v1.18.0
 	github.com/jinzhu/configor v1.2.2
-	golang.org/x/net v0.37.0
+	golang.org/x/net v0.38.0
 )
 
 require (
