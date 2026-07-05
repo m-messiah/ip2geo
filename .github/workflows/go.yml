@@ -18,6 +18,7 @@ jobs:
       uses: actions/setup-go@v6
       with:
         go-version: 1.26
+        cache-dependency-path: go.sum
 
     - name: Build
       run: go build -ldflags "-X main.VERSION=${GITHUB_REF##*/}" -o ip2geo -v ./...
@@ -37,7 +38,7 @@ jobs:
     - name: Download MaxMind
       env:
         MAXMIND_LICENSE_KEY: ${{ secrets.MAXMIND_LICENSE_KEY }}
-      run: wget -O maxmind.zip --user=145768 --password=$MAXMIND_LICENSE_KEY 'https://download.maxmind.com/geoip/databases/GeoLite2-City-CSV/download?suffix=zip'
+      run: wget -O maxmind.zip --user=145768 --password="$MAXMIND_LICENSE_KEY" 'https://download.maxmind.com/geoip/databases/GeoLite2-City-CSV/download?suffix=zip'
 
     - name: Upload MaxMind db
       uses: actions/upload-artifact@v7
@@ -67,12 +68,18 @@ jobs:
     steps:
     - uses: actions/checkout@v6
 
+    - name: Cache Perl modules
+      uses: actions/cache@v6
+      with:
+        path: ~/perl5
+        key: perl5-test-nginx-socket-${{ runner.os }}
+
     - name: Set up environment
       run: |
         sudo apt-get install -y nginx tzdata cpanminus
-        sudo cpanm --quiet local::lib
-        eval $(perl -Mlocal::lib)
-        sudo cpanm --quiet --notest Test::Nginx::Socket
+        cpanm --quiet --notest --local-lib=~/perl5 Test::Nginx::Socket
+        echo "PERL5LIB=$HOME/perl5/lib/perl5" >> "$GITHUB_ENV"
+        echo "PATH=$HOME/perl5/bin:$PATH" >> "$GITHUB_ENV"
 
     - name: Download binary
       uses: actions/download-artifact@v8
@@ -110,6 +117,7 @@ jobs:
       uses: actions/setup-go@v6
       with:
         go-version: 1.26
+        cache-dependency-path: go.sum
 
     - name: Build release file
       run: GOOS=${{ matrix.goos }} GOARCH=${{ matrix.arch }} go build -ldflags "-X main.VERSION=${GITHUB_REF##*/}" -o ip2geo-${{ matrix.goos }}-${{ matrix.arch }} ./...
