@@ -17,7 +17,7 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v2
       with:
-        go-version: 1.24
+        go-version: 1.26
     
     - name: Set up environment
       run: |
@@ -26,11 +26,8 @@ jobs:
         eval $(perl -Mlocal::lib)
         sudo cpanm --quiet --notest Test::Nginx::Socket
     
-    - name: Add version info
-      run: sed -i 's/const VERSION = .*/const VERSION = "'${GITHUB_REF##*/}'"/' version.go
-
     - name: Build
-      run: go build -o ip2geo -v ./...
+      run: go build -ldflags "-X main.VERSION=${GITHUB_REF##*/}" -o ip2geo -v ./...
 
     - name: Test version
       run: ./ip2geo -version
@@ -63,7 +60,7 @@ jobs:
       run: |
         for goos in darwin linux freebsd openbsd; do
           for arch in 386 arm amd64 arm64; do
-            go build -o ip2geo-$goos-$arch
+            go build -ldflags "-X main.VERSION=${GITHUB_REF##*/}" -o ip2geo-$goos-$arch
           done
         done
     - name: Release
