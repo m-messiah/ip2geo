@@ -26,7 +26,7 @@ jobs:
       run: ./ip2geo -version
 
     - name: Upload binary
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: ip2geo
         path: ip2geo
@@ -40,7 +40,7 @@ jobs:
       run: wget -O maxmind.zip --user=145768 --password=$MAXMIND_LICENSE_KEY 'https://download.maxmind.com/geoip/databases/GeoLite2-City-CSV/download?suffix=zip'
 
     - name: Upload MaxMind db
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: maxmind
         path: maxmind.zip
@@ -75,12 +75,12 @@ jobs:
         sudo cpanm --quiet --notest Test::Nginx::Socket
 
     - name: Download binary
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: ip2geo
 
     - name: Download MaxMind db
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         name: maxmind
 
@@ -115,7 +115,7 @@ jobs:
       run: GOOS=${{ matrix.goos }} GOARCH=${{ matrix.arch }} go build -ldflags "-X main.VERSION=${GITHUB_REF##*/}" -o ip2geo-${{ matrix.goos }}-${{ matrix.arch }} ./...
 
     - name: Upload release file
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: ip2geo-${{ matrix.goos }}-${{ matrix.arch }}
         path: ip2geo-${{ matrix.goos }}-${{ matrix.arch }}
@@ -126,7 +126,7 @@ jobs:
     if: github.ref_type == 'tag'
     steps:
     - name: Download release files
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8
       with:
         pattern: ip2geo-*
         merge-multiple: true
