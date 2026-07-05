@@ -88,9 +88,8 @@ func configLoad() {
 		Config.LogLevel = 2
 	}
 
-	if !(Config.IPGeobase.Enabled || Config.TOR.Enabled || Config.MaxMind.Enabled || Config.IP2Proxy.Lite.Enabled || Config.IP2Proxy.Pro.Enabled) {
+	if !Config.IPGeobase.Enabled && !Config.TOR.Enabled && !Config.MaxMind.Enabled && !Config.IP2Proxy.Lite.Enabled && !Config.IP2Proxy.Pro.Enabled {
 		// By default, generate all maps except IPGeobase
-		Config.IPGeobase.Enabled = false
 		Config.TOR.Enabled = true
 		Config.MaxMind.Enabled = Config.MaxMind.LicenseKey != "" || Config.MaxMind.Filename != ""
 		Config.IP2Proxy.Lite.Enabled = Config.IP2Proxy.Lite.Token != "" || Config.IP2Proxy.Lite.Filename != ""
@@ -101,7 +100,10 @@ func configLoad() {
 func main() {
 	configLoad()
 
-	_ = os.MkdirAll(Config.OutputDir, 0755)
+	if err := os.MkdirAll(Config.OutputDir, 0755); err != nil {
+		printMessage("ip2geo", fmt.Sprintf("failed to create output directory: %s", err), "FAIL")
+		os.Exit(1)
+	}
 	if Config.LogLevel < 2 {
 		printMessage(" ", "Use output directory", Config.OutputDir)
 	}

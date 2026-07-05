@@ -46,14 +46,15 @@ func (o *ip2proxy) checkErr(err error, message string) bool {
 }
 
 func (o *ip2proxy) Get() {
-	if o.Name == "ip2proxyPro" {
+	switch o.Name {
+	case "ip2proxyPro":
 		o.csvFilename = "IP2PROXY-IP-PROXYTYPE-COUNTRY-REGION-CITY-ISP.CSV"
 		o.zipFilename = "PX4"
-	} else if o.Name == "ip2proxyLite" {
+	case "ip2proxyLite":
 		o.csvFilename = "IP2PROXY-LITE-PX4.CSV"
 		o.zipFilename = "PX4LITE"
-	} else {
-		o.ErrorsChan <- Error{errors.New("Unknown ip2proxy type requested"), o.Name, "bad init"}
+	default:
+		o.ErrorsChan <- Error{errors.New("unknown ip2proxy type requested"), o.Name, "bad init"}
 		return
 	}
 	fileData, err := o.getZip()
@@ -77,7 +78,7 @@ func (o *ip2proxy) getZip() ([]byte, error) {
 	} else if len(o.Filename) > 0 {
 		return os.ReadFile(o.Filename)
 	} else {
-		return nil, errors.New("Token or Filename must be passed")
+		return nil, errors.New("token or filename must be passed")
 	}
 }
 
@@ -95,7 +96,7 @@ func (o *ip2proxy) download() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != 200 {
 		return nil, fmt.Errorf("failed with code %d", resp.StatusCode)
 	}
@@ -132,17 +133,17 @@ func (o *ip2proxy) Parse(filename string) <-chan *ip2proxyItem {
 
 func (o *ip2proxy) lineToItem(line []string) (*ip2proxyItem, error) {
 	if len(line) != 8 {
-		return nil, fmt.Errorf("Number of field is not 8")
+		return nil, fmt.Errorf("number of fields is not 8")
 	}
 	var (
 		ipFromInt, ipToInt int64
 		err                error
 	)
 	if ipFromInt, err = strconv.ParseInt(line[0], 10, 64); err != nil {
-		return nil, fmt.Errorf("Can't parse FromIP with: %v", err)
+		return nil, fmt.Errorf("can't parse FromIP with: %v", err)
 	}
 	if ipToInt, err = strconv.ParseInt(line[1], 10, 64); err != nil {
-		return nil, fmt.Errorf("Can't parse ToIP with: %v", err)
+		return nil, fmt.Errorf("can't parse ToIP with: %v", err)
 	}
 	return &ip2proxyItem{
 		IPFrom:      int2ip(ipFromInt),
@@ -156,17 +157,25 @@ func (o *ip2proxy) lineToItem(line []string) (*ip2proxyItem, error) {
 	}, nil
 }
 
-func (o *ip2proxy) Write() error {
+func (o *ip2proxy) Write() (retErr error) {
 	netFile, err := os.Create(path.Join(o.OutputDir, o.Name+"_net.txt"))
 	if err != nil {
 		return err
 	}
-	defer netFile.Close()
+	defer func() {
+		if cerr := netFile.Close(); cerr != nil && retErr == nil {
+			retErr = cerr
+		}
+	}()
 	ispFile, err := os.Create(path.Join(o.OutputDir, o.Name+"_isp.txt"))
 	if err != nil {
 		return err
 	}
-	defer ispFile.Close()
+	defer func() {
+		if cerr := ispFile.Close(); cerr != nil && retErr == nil {
+			retErr = cerr
+		}
+	}()
 	var mapValue string
 	for item := range o.Parse(o.csvFilename) {
 		if o.PrintType {
@@ -174,8 +183,12 @@ func (o *ip2proxy) Write() error {
 		} else {
 			mapValue = "1"
 		}
-		fmt.Fprintf(netFile, "%s-%s \"%s\";\n", item.IPFrom, item.IPTo, mapValue)
-		fmt.Fprintf(ispFile, "%s-%s \"%s\";\n", item.IPFrom, item.IPTo, strings.Replace(item.ISP, "\"", "\\\"", -1))
+		if _, err := fmt.Fprintf(netFile, "%s-%s \"%s\";\n", item.IPFrom, item.IPTo, mapValue); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintf(ispFile, "%s-%s \"%s\";\n", item.IPFrom, item.IPTo, strings.ReplaceAll(item.ISP, "\"", "\\\"")); err != nil {
+			return err
+		}
 	}
 	return nil
 }

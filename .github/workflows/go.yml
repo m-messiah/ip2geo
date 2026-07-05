@@ -12,12 +12,12 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v6
 
     - name: Set up Go
-      uses: actions/setup-go@v2
+      uses: actions/setup-go@v6
       with:
-        go-version: 1.24
+        go-version: 1.26
     
     - name: Set up environment
       run: |
@@ -26,11 +26,8 @@ jobs:
         eval $(perl -Mlocal::lib)
         sudo cpanm --quiet --notest Test::Nginx::Socket
     
-    - name: Add version info
-      run: sed -i 's/const VERSION = .*/const VERSION = "'${GITHUB_REF##*/}'"/' version.go
-
     - name: Build
-      run: go build -o ip2geo -v ./...
+      run: go build -ldflags "-X main.VERSION=${GITHUB_REF##*/}" -o ip2geo -v ./...
 
     - name: Test version
       run: ./ip2geo -version
@@ -38,7 +35,7 @@ jobs:
     - name: Download MaxMind
       env:
         MAXMIND_LICENSE_KEY: ${{ secrets.MAXMIND_LICENSE_KEY }}
-      run: wget -O maxmind.zip 'https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-City-CSV&suffix=zip&license_key='$MAXMIND_LICENSE_KEY
+      run: wget -O maxmind.zip --user=145768 --password=$MAXMIND_LICENSE_KEY 'https://download.maxmind.com/geoip/databases/GeoLite2-City-CSV/download?suffix=zip'
 
     - name: Test maxmind
       run: |
@@ -59,15 +56,16 @@ jobs:
         TEST_NGINX_IP2GEO_DIR=$PWD prove t/nginx_geo_ipv6.t
         
     - name: Build release files
-      if: ${{ github.ref == 'refs/heads/main' }} || startsWith(github.ref, 'refs/tags/')
+      if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
       run: |
         for goos in darwin linux freebsd openbsd; do
           for arch in 386 arm amd64 arm64; do
-            go build -o ip2geo-$goos-$arch
+            GOOS=$goos GOARCH=$arch go build -ldflags "-X main.VERSION=${GITHUB_REF##*/}" -o ip2geo-$goos-$arch ./...
           done
         done
     - name: Release
-      uses: softprops/action-gh-release@v1
-      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v3
+      if: github.ref_type == 'tag'
       with:
+        generate_release_notes: true
         files: ip2geo-*
