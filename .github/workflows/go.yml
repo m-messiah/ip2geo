@@ -60,6 +60,9 @@ jobs:
       run: |
         for goos in darwin linux freebsd openbsd; do
           for arch in 386 arm amd64 arm64; do
+            if [ "$goos" = "darwin" ] && { [ "$arch" = "386" ] || [ "$arch" = "arm" ]; }; then
+              continue
+            fi
             GOOS=$goos GOARCH=$arch go build -ldflags "-X main.VERSION=${GITHUB_REF##*/}" -o ip2geo-$goos-$arch ./...
           done
         done
