@@ -35,7 +35,7 @@ jobs:
     - name: Download MaxMind
       env:
         MAXMIND_LICENSE_KEY: ${{ secrets.MAXMIND_LICENSE_KEY }}
-      run: wget -O maxmind.zip 'https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-City-CSV&suffix=zip&license_key='$MAXMIND_LICENSE_KEY
+      run: wget -O maxmind.zip --user=145768 --password=$MAXMIND_LICENSE_KEY 'https://download.maxmind.com/geoip/databases/GeoLite2-City-CSV/download?suffix=zip'
 
     - name: Test maxmind
       run: |
