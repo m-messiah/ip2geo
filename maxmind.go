@@ -46,7 +46,10 @@ func (maxmind *MaxMind) download() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("failed with code %d", resp.StatusCode)
+	}
 	answer, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
@@ -107,7 +110,7 @@ func (maxmind *MaxMind) citiesDB() (map[string]geoItem, error) {
 		locations[*key] = *location
 	}
 	if len(locations) < 1 {
-		return nil, errors.New("Locations db is empty")
+		return nil, errors.New("locations db is empty")
 	}
 	return locations, nil
 }
@@ -138,15 +141,25 @@ func (maxmind *MaxMind) parseNetwork(locations map[string]geoItem) <-chan geoIte
 	return database
 }
 
-func (maxmind *MaxMind) writeMap(locations map[string]geoItem) error {
+func (maxmind *MaxMind) writeMap(locations map[string]geoItem) (retErr error) {
 	city, err := openMapFile(maxmind.OutputDir, "mm_city.txt")
 	if err != nil {
 		return err
 	}
+	defer func() {
+		if cerr := city.Close(); cerr != nil && retErr == nil {
+			retErr = cerr
+		}
+	}()
 	tz, err := openMapFile(maxmind.OutputDir, "mm_tz.txt")
 	if err != nil {
 		return err
 	}
+	defer func() {
+		if cerr := tz.Close(); cerr != nil && retErr == nil {
+			retErr = cerr
+		}
+	}()
 	var country *os.File
 	var countryCode *os.File
 	if !maxmind.NoCountry {
@@ -154,32 +167,48 @@ func (maxmind *MaxMind) writeMap(locations map[string]geoItem) error {
 		if err != nil {
 			return err
 		}
+		defer func() {
+			if cerr := country.Close(); cerr != nil && retErr == nil {
+				retErr = cerr
+			}
+		}()
 		countryCode, err = openMapFile(maxmind.OutputDir, "mm_country_code.txt")
 		if err != nil {
 			return err
 		}
-		defer country.Close()
-		defer countryCode.Close()
+		defer func() {
+			if cerr := countryCode.Close(); cerr != nil && retErr == nil {
+				retErr = cerr
+			}
+		}()
 	}
-	defer city.Close()
-	defer tz.Close()
 
 	for location := range maxmind.parseNetwork(locations) {
 		var cityName string
 		var countryName string
 		if maxmind.NoBase64 {
-			cityName = "\"" + strings.ReplaceAll(location.City, "\"", "\\\"") + "\""
-			countryName = "\"" + strings.ReplaceAll(location.Country, "\"", "\\\"") + "\""
+			sanitizedCity := strings.ReplaceAll(strings.ReplaceAll(location.City, "\n", ""), "\r", "")
+			sanitizedCountry := strings.ReplaceAll(strings.ReplaceAll(location.Country, "\n", ""), "\r", "")
+			cityName = "\"" + strings.ReplaceAll(sanitizedCity, "\"", "\\\"") + "\""
+			countryName = "\"" + strings.ReplaceAll(sanitizedCountry, "\"", "\\\"") + "\""
 		} else {
 			cityName = base64.StdEncoding.EncodeToString([]byte(location.City))
 			countryName = base64.StdEncoding.EncodeToString([]byte(location.Country))
 		}
 
-		fmt.Fprintf(city, "%s %s;\n", location.Network, cityName)
-		fmt.Fprintf(tz, "%s %s;\n", location.Network, location.TZ)
+		if _, err := fmt.Fprintf(city, "%s %s;\n", location.Network, cityName); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintf(tz, "%s %s;\n", location.Network, location.TZ); err != nil {
+			return err
+		}
 		if !maxmind.NoCountry {
-			fmt.Fprintf(country, "%s %s;\n", location.Network, countryName)
-			fmt.Fprintf(countryCode, "%s %s;\n", location.Network, location.CountryCode)
+			if _, err := fmt.Fprintf(country, "%s %s;\n", location.Network, countryName); err != nil {
+				return err
+			}
+			if _, err := fmt.Fprintf(countryCode, "%s %s;\n", location.Network, location.CountryCode); err != nil {
+				return err
+			}
 		}
 	}
 	return nil

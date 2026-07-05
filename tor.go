@@ -76,7 +76,7 @@ func (tor *Tor) torProjectDownload() {
 		tor.tempLists <- nil
 		return
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	torproject := make(map[string]bool)
 	reader := bufio.NewReader(resp.Body)
 	for {
@@ -126,14 +126,20 @@ func (tor *Tor) merge() error {
 	return errors.New("torlist empty")
 }
 
-func (tor *Tor) writeMap() error {
+func (tor *Tor) writeMap() (retErr error) {
 	torFile, err := openMapFile(tor.OutputDir, "tor.txt")
 	if err != nil {
 		return err
 	}
-	defer torFile.Close()
+	defer func() {
+		if cerr := torFile.Close(); cerr != nil && retErr == nil {
+			retErr = cerr
+		}
+	}()
 	for _, ip := range tor.list {
-		fmt.Fprintf(torFile, "%s-%s 1;\n", ip, ip)
+		if _, err := fmt.Fprintf(torFile, "%s-%s 1;\n", ip, ip); err != nil {
+			return err
+		}
 	}
 	return nil
 

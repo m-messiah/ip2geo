@@ -109,7 +109,7 @@ func readCSVDatabase(archive []*zip.File, filename string, dbType string, comma 
 			printMessage(dbType, fmt.Sprintf("Can't open %s", filename), "FAIL")
 			yield <- nil
 		}
-		defer fp.Close()
+		defer func() { _ = fp.Close() }()
 		var r *csv.Reader
 		if windowsEncoding {
 			utf8, err := charset.NewReader(fp, "text/csv; charset=windows-1251")

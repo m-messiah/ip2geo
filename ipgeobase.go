@@ -30,7 +30,7 @@ func (ipgeobase *IPGeobase) download() ([]byte, error) {
 		printMessage("IPGeobase", "Download no answer", "FAIL")
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	answer, err := io.ReadAll(resp.Body)
 	if err != nil {
 		printMessage("IPGeobase", "Download bad answer", "FAIL")
@@ -68,7 +68,7 @@ func (ipgeobase *IPGeobase) citiesDB() (map[string]geoItem, error) {
 		}
 	}
 	if len(cities) < 1 {
-		return nil, errors.New("Cities db is empty")
+		return nil, errors.New("cities db is empty")
 	}
 	return cities, nil
 }
@@ -93,27 +93,45 @@ func (ipgeobase *IPGeobase) parseNetwork(cities map[string]geoItem) <-chan geoIt
 	return database
 }
 
-func (ipgeobase *IPGeobase) writeMap(cities map[string]geoItem) error {
+func (ipgeobase *IPGeobase) writeMap(cities map[string]geoItem) (retErr error) {
 	reg, err := openMapFile(ipgeobase.OutputDir, "region.txt")
 	if err != nil {
 		return err
 	}
+	defer func() {
+		if cerr := reg.Close(); cerr != nil && retErr == nil {
+			retErr = cerr
+		}
+	}()
 	city, err := openMapFile(ipgeobase.OutputDir, "city.txt")
 	if err != nil {
 		return err
 	}
+	defer func() {
+		if cerr := city.Close(); cerr != nil && retErr == nil {
+			retErr = cerr
+		}
+	}()
 	tz, err := openMapFile(ipgeobase.OutputDir, "tz.txt")
 	if err != nil {
 		return err
 	}
-	defer reg.Close()
-	defer city.Close()
-	defer tz.Close()
+	defer func() {
+		if cerr := tz.Close(); cerr != nil && retErr == nil {
+			retErr = cerr
+		}
+	}()
 
 	for info := range ipgeobase.parseNetwork(cities) {
-		fmt.Fprintf(city, "%s %s;\n", info.Network, base64.StdEncoding.EncodeToString([]byte(info.City)))
-		fmt.Fprintf(reg, "%s %02d;\n", info.Network, info.RegID)
-		fmt.Fprintf(tz, "%s %s;\n", info.Network, info.TZ)
+		if _, err := fmt.Fprintf(city, "%s %s;\n", info.Network, base64.StdEncoding.EncodeToString([]byte(info.City))); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintf(reg, "%s %02d;\n", info.Network, info.RegID); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintf(tz, "%s %s;\n", info.Network, info.TZ); err != nil {
+			return err
+		}
 	}
 	return nil
 }
