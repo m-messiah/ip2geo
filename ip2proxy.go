@@ -46,13 +46,14 @@ func (o *ip2proxy) checkErr(err error, message string) bool {
 }
 
 func (o *ip2proxy) Get() {
-	if o.Name == "ip2proxyPro" {
+	switch o.Name {
+	case "ip2proxyPro":
 		o.csvFilename = "IP2PROXY-IP-PROXYTYPE-COUNTRY-REGION-CITY-ISP.CSV"
 		o.zipFilename = "PX4"
-	} else if o.Name == "ip2proxyLite" {
+	case "ip2proxyLite":
 		o.csvFilename = "IP2PROXY-LITE-PX4.CSV"
 		o.zipFilename = "PX4LITE"
-	} else {
+	default:
 		o.ErrorsChan <- Error{errors.New("Unknown ip2proxy type requested"), o.Name, "bad init"}
 		return
 	}
@@ -175,7 +176,7 @@ func (o *ip2proxy) Write() error {
 			mapValue = "1"
 		}
 		fmt.Fprintf(netFile, "%s-%s \"%s\";\n", item.IPFrom, item.IPTo, mapValue)
-		fmt.Fprintf(ispFile, "%s-%s \"%s\";\n", item.IPFrom, item.IPTo, strings.Replace(item.ISP, "\"", "\\\"", -1))
+		fmt.Fprintf(ispFile, "%s-%s \"%s\";\n", item.IPFrom, item.IPTo, strings.ReplaceAll(item.ISP, "\"", "\\\""))
 	}
 	return nil
 }
